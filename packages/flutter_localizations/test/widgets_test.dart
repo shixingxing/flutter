@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.rint
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -260,7 +260,7 @@ void main() {
         ],
         buildContent: (BuildContext context) {
           return Text(TestLocalizations.of(context).message);
-        }
+        },
       )
     );
     await tester.pump(const Duration(milliseconds: 50)); // TestLocalizations.loadAsync() takes 100ms
@@ -300,7 +300,7 @@ void main() {
               Text('B: ${MoreLocalizations.of(context).message}'),
             ],
           );
-        }
+        },
       )
     );
 
@@ -324,7 +324,7 @@ void main() {
               Text('B: ${MoreLocalizations.of(context).message}'),
             ],
           );
-        }
+        },
       )
     );
 
@@ -365,7 +365,7 @@ void main() {
               ),
             ],
           );
-        }
+        },
       )
     );
 
@@ -392,7 +392,7 @@ void main() {
               Text('B: ${MoreLocalizations.of(context).message}'),
             ],
           );
-        }
+        },
       )
     );
 
@@ -417,7 +417,7 @@ void main() {
               Text('B: ${MoreLocalizations.of(context).message}'),
             ],
           );
-        }
+        },
       )
     );
 
@@ -443,7 +443,7 @@ void main() {
               Text('B: ${MoreLocalizations.of(context).message}'),
             ],
           );
-        }
+        },
       )
     );
 
@@ -466,7 +466,7 @@ void main() {
               Text('B: ${MoreLocalizations.of(context).message}'),
             ],
           );
-        }
+        },
       )
     );
 
@@ -491,7 +491,7 @@ void main() {
         buildContent: (BuildContext context) {
           pageContext = context;
           return const Text('Hello World');
-        }
+        },
       )
     );
 
@@ -512,7 +512,7 @@ void main() {
         },
         buildContent: (BuildContext context) {
           return Text(Localizations.localeOf(context).toString());
-        }
+        },
       )
     );
 
@@ -535,7 +535,7 @@ void main() {
         ],
         buildContent: (BuildContext context) {
           return Text(Localizations.localeOf(context).toString());
-        }
+        },
       )
     );
 
@@ -558,7 +558,7 @@ void main() {
     expect(find.text('zh_CN'), findsOneWidget);
   });
 
-  testWidgets('Localizations.override widget tracks parent\'s locale and delegates', (WidgetTester tester) async {
+  testWidgets("Localizations.override widget tracks parent's locale and delegates", (WidgetTester tester) async {
     await tester.pumpWidget(
       buildFrame(
         // Accept whatever locale we're given
@@ -577,7 +577,7 @@ void main() {
               },
             ),
           );
-        }
+        },
       )
     );
 
@@ -598,7 +598,7 @@ void main() {
     expect(find.text('da_DA TextDirection.ltr'), findsOneWidget);
   });
 
-  testWidgets('Localizations.override widget overrides parent\'s DefaultWidgetLocalizations', (WidgetTester tester) async {
+  testWidgets("Localizations.override widget overrides parent's DefaultWidgetLocalizations", (WidgetTester tester) async {
     await tester.pumpWidget(
       buildFrame(
         // Accept whatever locale we're given
@@ -618,7 +618,7 @@ void main() {
               },
             ),
           );
-        }
+        },
       )
     );
 
@@ -651,7 +651,7 @@ void main() {
           final Locale locale = Localizations.localeOf(context);
           final TextDirection direction = WidgetsLocalizations.of(context).textDirection;
           return Text('$locale $direction');
-        }
+        },
       )
     );
 
@@ -688,7 +688,7 @@ void main() {
           final Locale locale1 = ui.window.locales.first;
           final Locale locale2 = ui.window.locales[1];
           return Text('$locale1 $locale2');
-        }
+        },
       )
     );
      // Initial WidgetTester default locales is `en_US` and `zh_CN`.
@@ -707,7 +707,7 @@ void main() {
         locale: const Locale('en', 'US'),
         buildContent: (BuildContext context) {
           return Text(Localizations.localeOf(context).toString());
-        }
+        },
       )
     );
     await tester.pumpAndSettle();
@@ -723,7 +723,7 @@ void main() {
         locale: const Locale('en', 'US'),
         buildContent: (BuildContext context) {
           return Text(Localizations.localeOf(context).toString());
-        }
+        },
       )
     );
     await tester.pumpAndSettle();
@@ -739,7 +739,7 @@ void main() {
         locale: const Locale('ab', 'CD'),
         buildContent: (BuildContext context) {
           return Text(Localizations.localeOf(context).toString());
-        }
+        },
       )
     );
     await tester.pumpAndSettle();
@@ -758,7 +758,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
     await tester.binding.setLocales(const <Locale>[
@@ -781,7 +781,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
     await tester.binding.setLocales(const <Locale>[
@@ -813,7 +813,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
 
@@ -954,7 +954,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
 
@@ -1094,7 +1094,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
     await tester.binding.setLocales(const <Locale>[
@@ -1117,7 +1117,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
     await tester.binding.setLocales(const <Locale>[
@@ -1150,7 +1150,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
     await tester.binding.setLocales(const <Locale>[
@@ -1217,7 +1217,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
 
@@ -1281,7 +1281,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
 
@@ -1433,7 +1433,7 @@ void main() {
         buildContent: (BuildContext context) {
           final Locale locale = Localizations.localeOf(context);
           return Text('$locale');
-        }
+        },
       )
     );
 

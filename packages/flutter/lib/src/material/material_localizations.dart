@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import 'reorderable_list.dart';
 import 'text_theme.dart';
 import 'time.dart';
 import 'typography.dart';
@@ -26,19 +27,28 @@ import 'typography.dart';
 //
 // 4. Update the flutter_localizations package. To add a new string to the
 //    flutter_localizations package, you must first add it to the English
-//    translations (lib/src/l10n/material_en.arb), including a description, then
-//    you must add it to every other language (all the other *.arb files in that
-//    same directory), listing the translation as `TBD`. After that you have to
-//    re-generate lib/src/l10n/localizations.dart by running
-//    `dart dev/tools/gen_localizations.dart --overwrite`. There is a README
-//    file with further information in the lib/src/l10n/ directory.
+//    translations (lib/src/l10n/material_en.arb), including a description.
+//
+//    Then you need to add  new `TBD` entries for the string to all of the other
+//    language locale files by running:
+//    ```
+//    dart dev/tools/localization/bin/gen_missing_localizations.dart
+//    ```
+//
+//    Finally you need to re-generate lib/src/l10n/localizations.dart by running:
+//    ```
+//    dart dev/tools/localization/bin/gen_localizations.dart --overwrite
+//    ```
+//
+//    There is a README file with further information in the lib/src/l10n/
+//    directory.
 //
 // 5. If you are a Google employee, you should then also follow the instructions
 //    at go/flutter-l10n. If you're not, don't worry about it.
 //
 // 6. If you're adding a String for the sake of Flutter, not for an app-specific
 //    version of this interface, you are making a breaking API change. See
-//    https://flutter.io/design-principles/#handling-breaking-changes.
+//    https://github.com/flutter/flutter/wiki/Tree-hygiene#handling-breaking-changes.
 
 /// Defines the localized resource values used by the Material widgets.
 ///
@@ -94,7 +104,7 @@ abstract class MaterialLocalizations {
   /// there are, e.g. 'Tab 1 of 2' in United States English.
   ///
   /// `tabIndex` and `tabCount` must be greater than or equal to one.
-  String tabLabel({int tabIndex, int tabCount});
+  String tabLabel({ int tabIndex, int tabCount });
 
   /// Title for the [PaginatedDataTable]'s selected row count header.
   String selectedRowCountTitle(int selectedRowCount);
@@ -176,7 +186,7 @@ abstract class MaterialLocalizations {
   /// Defines the localized [TextStyle] geometry for [ThemeData.textTheme].
   ///
   /// The [scriptCategory] defines the overall geometry of a [TextTheme] for
-  /// the static [MaterialTextGeometry.localizedFor] method in terms of the
+  /// the [Typography.geometryThemeFor] method in terms of the
   /// three language categories defined in https://material.io/go/design-typography.
   ///
   /// Generally speaking, font sizes for [ScriptCategory.tall] and
@@ -277,27 +287,27 @@ abstract class MaterialLocalizations {
   /// shows the list of accounts.
   String get showAccountsLabel;
 
-  /// The semantics label used for [ReorderableList] to reorder an item in the
+  /// The semantics label used for [ReorderableListView] to reorder an item in the
   /// list to the start of the list.
   String get reorderItemToStart;
 
-  /// The semantics label used for [ReorderableList] to reorder an item in the
+  /// The semantics label used for [ReorderableListView] to reorder an item in the
   /// list to the end of the list.
   String get reorderItemToEnd;
 
-  /// The semantics label used for [ReorderableList] to reorder an item in the
+  /// The semantics label used for [ReorderableListView] to reorder an item in the
   /// list one space up the list.
   String get reorderItemUp;
 
-  /// The semantics label used for [ReorderableList] to reorder an item in the
+  /// The semantics label used for [ReorderableListView] to reorder an item in the
   /// list one space down the list.
   String get reorderItemDown;
 
-  /// The semantics label used for [ReorderableList] to reorder an item in the
+  /// The semantics label used for [ReorderableListView] to reorder an item in the
   /// list one space left in the list.
   String get reorderItemLeft;
 
-  /// The semantics label used for [ReorderableList] to reorder an item in the
+  /// The semantics label used for [ReorderableListView] to reorder an item in the
   /// list one space right in the list.
   String get reorderItemRight;
 
@@ -352,7 +362,7 @@ class _MaterialLocalizationsDelegate extends LocalizationsDelegate<MaterialLocal
 ///
 ///  * [GlobalMaterialLocalizations], which provides material localizations for
 ///    many languages.
-///  * [MaterialApp.delegates], which automatically includes
+///  * [MaterialApp.localizationsDelegates], which automatically includes
 ///    [DefaultMaterialLocalizations.delegate] by default.
 class DefaultMaterialLocalizations implements MaterialLocalizations {
   /// Constructs an object that defines the material widgets' localized strings
@@ -598,7 +608,7 @@ class DefaultMaterialLocalizations implements MaterialLocalizations {
   String get rowsPerPageTitle => 'Rows per page:';
 
   @override
-  String tabLabel({int tabIndex, int tabCount}) {
+  String tabLabel({ int tabIndex, int tabCount }) {
     assert(tabIndex >= 1);
     assert(tabCount >= 1);
     return 'Tab $tabIndex of $tabCount';

@@ -1,21 +1,17 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 import 'dart:io';
 import 'package:connectivity/connectivity.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:device_info/device_info.dart';
 
-// TODO(sigurdm): This should not be stored here.
-const String beeUri =
-    'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
-
 class VideoCard extends StatelessWidget {
-  const VideoCard({Key key, this.controller, this.title, this.subtitle})
-      : super(key: key);
+  const VideoCard({ Key key, this.controller, this.title, this.subtitle }) : super(key: key);
 
   final VideoPlayerController controller;
   final String title;
@@ -55,14 +51,17 @@ class VideoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget fullScreenRoutePageBuilder(BuildContext context,
-        Animation<double> animation, Animation<double> secondaryAnimation) {
+    Widget fullScreenRoutePageBuilder(
+      BuildContext context,
+      Animation<double> animation,
+      Animation<double> secondaryAnimation,
+    ) {
       return _buildFullScreenVideo();
     }
 
     void pushFullScreenWidget() {
       final TransitionRoute<void> route = PageRouteBuilder<void>(
-        settings: RouteSettings(name: title, isInitialRoute: false),
+        settings: RouteSettings(name: title),
         pageBuilder: fullScreenRoutePageBuilder,
       );
 
@@ -149,7 +148,7 @@ class _VideoPlayPauseState extends State<VideoPlayPause> {
   _VideoPlayPauseState() {
     listener = () {
       if (mounted)
-        setState(() {});
+        setState(() { });
     };
   }
 
@@ -214,8 +213,7 @@ class FadeAnimation extends StatefulWidget {
   _FadeAnimationState createState() => _FadeAnimationState();
 }
 
-class _FadeAnimationState extends State<FadeAnimation>
-    with SingleTickerProviderStateMixin {
+class _FadeAnimationState extends State<FadeAnimation> with SingleTickerProviderStateMixin {
   AnimationController animationController;
 
   @override
@@ -227,7 +225,7 @@ class _FadeAnimationState extends State<FadeAnimation>
     );
     animationController.addListener(() {
       if (mounted) {
-        setState(() {});
+        setState(() { });
       }
     });
     animationController.forward(from: 0.0);
@@ -283,7 +281,7 @@ class _ConnectivityOverlayState extends State<ConnectivityOverlay> {
   StreamSubscription<ConnectivityResult> connectivitySubscription;
   bool connected = true;
 
-  static const Widget errorSnackBar = SnackBar(
+  static const SnackBar errorSnackBar = SnackBar(
     backgroundColor: Colors.red,
     content: ListTile(
       title: Text('No network'),
@@ -297,8 +295,7 @@ class _ConnectivityOverlayState extends State<ConnectivityOverlay> {
     final Connectivity connectivity = Connectivity();
     ConnectivityResult previousResult = await connectivity.checkConnectivity();
     yield previousResult;
-    await for (ConnectivityResult result
-        in connectivity.onConnectivityChanged) {
+    await for (final ConnectivityResult result in connectivity.onConnectivityChanged) {
       if (result != previousResult) {
         yield result;
         previousResult = result;
@@ -309,6 +306,15 @@ class _ConnectivityOverlayState extends State<ConnectivityOverlay> {
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) {
+      // Assume connectivity
+      // TODO(ditman): Remove this shortcut when `connectivity` support for web
+      // lands, https://github.com/flutter/flutter/issues/46735
+      if (!widget.connectedCompleter.isCompleted) {
+        widget.connectedCompleter.complete(null);
+      }
+      return;
+    }
     connectivitySubscription = connectivityStream().listen(
       (ConnectivityResult connectivityResult) {
         if (!mounted) {
@@ -327,7 +333,7 @@ class _ConnectivityOverlayState extends State<ConnectivityOverlay> {
 
   @override
   void dispose() {
-    connectivitySubscription.cancel();
+    connectivitySubscription?.cancel();
     super.dispose();
   }
 
@@ -336,7 +342,7 @@ class _ConnectivityOverlayState extends State<ConnectivityOverlay> {
 }
 
 class VideoDemo extends StatefulWidget {
-  const VideoDemo({Key key}) : super(key: key);
+  const VideoDemo({ Key key }) : super(key: key);
 
   static const String routeName = '/video';
 
@@ -347,40 +353,45 @@ class VideoDemo extends StatefulWidget {
 final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
 
 Future<bool> isIOSSimulator() async {
-  return Platform.isIOS && !(await deviceInfoPlugin.iosInfo).isPhysicalDevice;
+  return !kIsWeb &&
+      Platform.isIOS &&
+      !(await deviceInfoPlugin.iosInfo).isPhysicalDevice;
 }
 
-class _VideoDemoState extends State<VideoDemo>
-    with SingleTickerProviderStateMixin {
-  final VideoPlayerController butterflyController =
-      VideoPlayerController.asset(
-        'videos/butterfly.mp4',
-        package: 'flutter_gallery_assets',
-      );
-  final VideoPlayerController beeController = VideoPlayerController.network(
-    beeUri,
+class _VideoDemoState extends State<VideoDemo> with SingleTickerProviderStateMixin {
+  final VideoPlayerController butterflyController = VideoPlayerController.asset(
+    'videos/butterfly.mp4',
+    package: 'flutter_gallery_assets',
   );
+
+  // TODO(sigurdm): This should not be stored here.
+  static const String beeUri = 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4';
+  final VideoPlayerController beeController = VideoPlayerController.network(beeUri);
 
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   final Completer<void> connectedCompleter = Completer<void>();
   bool isSupported = true;
+  bool isDisposed = false;
 
   @override
   void initState() {
     super.initState();
 
-    Future<void> initController(VideoPlayerController controller) async {
+    Future<void> initController(VideoPlayerController controller, String name) async {
+      print('> VideoDemo initController "$name" ${isDisposed ? "DISPOSED" : ""}');
       controller.setLooping(true);
       controller.setVolume(0.0);
       controller.play();
       await connectedCompleter.future;
       await controller.initialize();
-      if (mounted)
-        setState(() {});
+      if (mounted) {
+        print('< VideoDemo initController "$name" done ${isDisposed ? "DISPOSED" : ""}');
+        setState(() { });
+      }
     }
 
-    initController(butterflyController);
-    initController(beeController);
+    initController(butterflyController, 'butterfly');
+    initController(beeController, 'bee');
     isIOSSimulator().then<void>((bool result) {
       isSupported = !result;
     });
@@ -388,8 +399,11 @@ class _VideoDemoState extends State<VideoDemo>
 
   @override
   void dispose() {
+    print('> VideoDemo dispose');
+    isDisposed  = true;
     butterflyController.dispose();
     beeController.dispose();
+    print('< VideoDemo dispose');
     super.dispose();
   }
 
@@ -401,7 +415,8 @@ class _VideoDemoState extends State<VideoDemo>
         title: const Text('Videos'),
       ),
       body: isSupported
-          ? ConnectivityOverlay(
+        ? ConnectivityOverlay(
+            child: Scrollbar(
               child: ListView(
                 children: <Widget>[
                   VideoCard(
@@ -416,14 +431,15 @@ class _VideoDemoState extends State<VideoDemo>
                   ),
                 ],
               ),
-              connectedCompleter: connectedCompleter,
-              scaffoldKey: scaffoldKey,
-            )
-          : const Center(
-              child: Text(
-                'Video playback not supported on the iOS Simulator.',
-              ),
             ),
+            connectedCompleter: connectedCompleter,
+            scaffoldKey: scaffoldKey,
+          )
+        : const Center(
+            child: Text(
+              'Video playback not supported on the iOS Simulator.',
+            ),
+          ),
     );
   }
 }

@@ -1,12 +1,15 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
+import 'package:flutter_gallery/demo/shrine/model/app_state_model.dart';
+import 'package:scoped_model/scoped_model.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
@@ -42,27 +45,34 @@ class GalleryApp extends StatefulWidget {
 class _GalleryAppState extends State<GalleryApp> {
   GalleryOptions _options;
   Timer _timeDilationTimer;
+  AppStateModel model;
 
   Map<String, WidgetBuilder> _buildRoutes() {
     // For a different example of how to set up an application routing table
     // using named routes, consider the example in the Navigator class documentation:
     // https://docs.flutter.io/flutter/widgets/Navigator-class.html
-    return Map<String, WidgetBuilder>.fromIterable(
-      kAllGalleryDemos,
-      key: (dynamic demo) => '${demo.routeName}',
-      value: (dynamic demo) => demo.buildRoute,
-    );
+    return <String, WidgetBuilder>{
+      for (final GalleryDemo demo in kAllGalleryDemos) demo.routeName: demo.buildRoute,
+    };
   }
 
   @override
   void initState() {
     super.initState();
     _options = GalleryOptions(
-      theme: kLightGalleryTheme,
+      themeMode: ThemeMode.system,
       textScaleFactor: kAllGalleryTextScaleValues[0],
+      visualDensity: kAllGalleryVisualDensityValues[0],
       timeDilation: timeDilation,
       platform: defaultTargetPlatform,
     );
+    model = AppStateModel()..loadProducts();
+  }
+
+  @override
+  void reassemble() {
+    _options = _options.copyWith(platform: defaultTargetPlatform);
+    super.reassemble();
   }
 
   @override
@@ -126,21 +136,38 @@ class _GalleryAppState extends State<GalleryApp> {
       );
     }
 
-    return MaterialApp(
-      theme: _options.theme.data.copyWith(platform: _options.platform),
-      title: 'Flutter Gallery',
-      color: Colors.grey,
-      showPerformanceOverlay: _options.showPerformanceOverlay,
-      checkerboardOffscreenLayers: _options.showOffscreenLayersCheckerboard,
-      checkerboardRasterCacheImages: _options.showRasterCacheImagesCheckerboard,
-      routes: _buildRoutes(),
-      builder: (BuildContext context, Widget child) {
-        return Directionality(
-          textDirection: _options.textDirection,
-          child: _applyTextScaleFactor(child),
-        );
-      },
-      home: home,
+    return ScopedModel<AppStateModel>(
+      model: model,
+      child: MaterialApp(
+        theme: kLightGalleryTheme.copyWith(platform: _options.platform, visualDensity: _options.visualDensity.visualDensity),
+        darkTheme: kDarkGalleryTheme.copyWith(platform: _options.platform, visualDensity: _options.visualDensity.visualDensity),
+        themeMode: _options.themeMode,
+        title: 'Flutter Gallery',
+        color: Colors.grey,
+        showPerformanceOverlay: _options.showPerformanceOverlay,
+        checkerboardOffscreenLayers: _options.showOffscreenLayersCheckerboard,
+        checkerboardRasterCacheImages: _options.showRasterCacheImagesCheckerboard,
+        routes: _buildRoutes(),
+        builder: (BuildContext context, Widget child) {
+          return Directionality(
+            textDirection: _options.textDirection,
+            child: _applyTextScaleFactor(
+              // Specifically use a blank Cupertino theme here and do not transfer
+              // over the Material primary color etc except the brightness to
+              // showcase standard iOS looks.
+              Builder(builder: (BuildContext context) {
+                return CupertinoTheme(
+                  data: CupertinoThemeData(
+                    brightness: Theme.of(context).brightness,
+                  ),
+                  child: child,
+                );
+              }),
+            ),
+          );
+        },
+        home: home,
+      ),
     );
   }
 }

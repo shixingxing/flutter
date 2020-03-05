@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -141,15 +141,15 @@ class ScrollableTabsDemoState extends State<ScrollableTabsDemo> with SingleTicke
             itemBuilder: (BuildContext context) => <PopupMenuItem<TabsDemoStyle>>[
               const PopupMenuItem<TabsDemoStyle>(
                 value: TabsDemoStyle.iconsAndText,
-                child: Text('Icons and text')
+                child: Text('Icons and text'),
               ),
               const PopupMenuItem<TabsDemoStyle>(
                 value: TabsDemoStyle.iconsOnly,
-                child: Text('Icons only')
+                child: Text('Icons only'),
               ),
               const PopupMenuItem<TabsDemoStyle>(
                 value: TabsDemoStyle.textOnly,
-                child: Text('Text only')
+                child: Text('Text only'),
               ),
             ],
           ),
@@ -193,7 +193,7 @@ class ScrollableTabsDemoState extends State<ScrollableTabsDemo> with SingleTicke
               ),
             ),
           );
-        }).toList()
+        }).toList(),
       ),
     );
   }

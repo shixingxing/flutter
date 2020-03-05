@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -102,43 +102,45 @@ class CategoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    return ListView(
-      key: PageStorageKey<Category>(category),
-      padding: const EdgeInsets.symmetric(
-        vertical: 16.0,
-        horizontal: 64.0,
-      ),
-      children: category.assets.map<Widget>((String asset) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Card(
-              child: Container(
-                width: 144.0,
-                alignment: Alignment.center,
-                child: Column(
-                  children: <Widget>[
-                    Image.asset(
-                      asset,
-                      package: 'flutter_gallery_assets',
-                      fit: BoxFit.contain,
-                    ),
-                    Container(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      alignment: AlignmentDirectional.center,
-                      child: Text(
+    return Scrollbar(
+      child: ListView(
+        key: PageStorageKey<Category>(category),
+        padding: const EdgeInsets.symmetric(
+          vertical: 16.0,
+          horizontal: 64.0,
+        ),
+        children: category.assets.map<Widget>((String asset) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Card(
+                child: Container(
+                  width: 144.0,
+                  alignment: Alignment.center,
+                  child: Column(
+                    children: <Widget>[
+                      Image.asset(
                         asset,
-                        style: theme.textTheme.caption,
+                        package: 'flutter_gallery_assets',
+                        fit: BoxFit.contain,
                       ),
-                    ),
-                  ],
+                      Container(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        alignment: AlignmentDirectional.center,
+                        child: Text(
+                          asset,
+                          style: theme.textTheme.caption,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24.0),
-          ],
-        );
-      }).toList(),
+              const SizedBox(height: 24.0),
+            ],
+          );
+        }).toList(),
+      ),
     );
   }
 }
@@ -183,7 +185,7 @@ class BackdropPanel extends StatelessWidget {
               padding: const EdgeInsetsDirectional.only(start: 16.0),
               alignment: AlignmentDirectional.centerStart,
               child: DefaultTextStyle(
-                style: theme.textTheme.subhead,
+                style: theme.textTheme.subtitle1,
                 child: Tooltip(
                   message: 'Tap to dismiss',
                   child: title,
@@ -203,14 +205,14 @@ class BackdropPanel extends StatelessWidget {
 class BackdropTitle extends AnimatedWidget {
   const BackdropTitle({
     Key key,
-    Listenable listenable,
+    Animation<double> listenable,
   }) : super(key: key, listenable: listenable);
 
   @override
   Widget build(BuildContext context) {
-    final Animation<double> animation = listenable;
+    final Animation<double> animation = listenable as Animation<double>;
     return DefaultTextStyle(
-      style: Theme.of(context).primaryTextTheme.title,
+      style: Theme.of(context).primaryTextTheme.headline6,
       softWrap: false,
       overflow: TextOverflow.ellipsis,
       child: Stack(
@@ -281,7 +283,7 @@ class _BackdropDemoState extends State<BackdropDemo> with SingleTickerProviderSt
   }
 
   double get _backdropHeight {
-    final RenderBox renderBox = _backdropKey.currentContext.findRenderObject();
+    final RenderBox renderBox = _backdropKey.currentContext.findRenderObject() as RenderBox;
     return renderBox.size.height;
   }
 
@@ -357,8 +359,8 @@ class _BackdropDemoState extends State<BackdropDemo> with SingleTickerProviderSt
         children: <Widget>[
           ListTileTheme(
             iconColor: theme.primaryIconTheme.color,
-            textColor: theme.primaryTextTheme.title.color.withOpacity(0.6),
-            selectedColor: theme.primaryTextTheme.title.color,
+            textColor: theme.primaryTextTheme.headline6.color.withOpacity(0.6),
+            selectedColor: theme.primaryTextTheme.headline6.color,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(

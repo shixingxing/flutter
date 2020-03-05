@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -26,14 +26,14 @@ abstract class Decoration extends Diagnosticable {
   const Decoration();
 
   @override
-  String toStringShort() => '$runtimeType';
+  String toStringShort() => objectRuntimeType(this, 'Decoration');
 
   /// In checked mode, throws an exception if the object is not in a
   /// valid configuration. Otherwise, returns true.
   ///
   /// This is intended to be used as follows:
   /// ```dart
-  ///   assert(myDecoration.debugAssertIsValid());
+  /// assert(myDecoration.debugAssertIsValid());
   /// ```
   bool debugAssertIsValid() => true;
 
@@ -164,7 +164,10 @@ abstract class Decoration extends Diagnosticable {
   /// The `onChanged` argument configures [BoxPainter.onChanged]. It can be
   /// omitted if there is no chance that the painter will change (for example,
   /// if it is a [BoxDecoration] with definitely no [DecorationImage]).
-  BoxPainter createBoxPainter([VoidCallback onChanged]);
+  BoxPainter createBoxPainter([ VoidCallback onChanged ]);
+
+  /// Returns a closed [Path] that describes the outer edge of this decoration.
+  Path getClipPath(Rect rect, TextDirection textDirection) => null;
 }
 
 /// A stateful class that can paint a particular [Decoration].

@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -38,7 +38,7 @@ class RenderImage extends RenderBox {
     bool matchTextDirection = false,
     TextDirection textDirection,
     bool invertColors = false,
-    FilterQuality filterQuality = FilterQuality.low
+    FilterQuality filterQuality = FilterQuality.low,
   }) : assert(scale != null),
        assert(repeat != null),
        assert(alignment != null),
@@ -156,7 +156,7 @@ class RenderImage extends RenderBox {
   FilterQuality _filterQuality;
   set filterQuality(FilterQuality value) {
     assert(value != null);
-    if(value == _filterQuality)
+    if (value == _filterQuality)
       return;
     _filterQuality = value;
     markNeedsPaint();
@@ -299,7 +299,7 @@ class RenderImage extends RenderBox {
     // be treated uniformly.
     constraints = BoxConstraints.tightFor(
       width: _width,
-      height: _height
+      height: _height,
     ).enforce(constraints);
 
     if (_image == null)
@@ -307,7 +307,7 @@ class RenderImage extends RenderBox {
 
     return constraints.constrainSizeAndAttemptToPreserveAspectRatio(Size(
       _image.width.toDouble() / _scale,
-      _image.height.toDouble() / _scale
+      _image.height.toDouble() / _scale,
     ));
   }
 
@@ -366,7 +366,7 @@ class RenderImage extends RenderBox {
       repeat: _repeat,
       flipHorizontally: _flipHorizontally,
       invertColors: invertColors,
-      filterQuality: _filterQuality
+      filterQuality: _filterQuality,
     );
   }
 
@@ -377,7 +377,7 @@ class RenderImage extends RenderBox {
     properties.add(DoubleProperty('width', width, defaultValue: null));
     properties.add(DoubleProperty('height', height, defaultValue: null));
     properties.add(DoubleProperty('scale', scale, defaultValue: 1.0));
-    properties.add(DiagnosticsProperty<Color>('color', color, defaultValue: null));
+    properties.add(ColorProperty('color', color, defaultValue: null));
     properties.add(EnumProperty<BlendMode>('colorBlendMode', colorBlendMode, defaultValue: null));
     properties.add(EnumProperty<BoxFit>('fit', fit, defaultValue: null));
     properties.add(DiagnosticsProperty<AlignmentGeometry>('alignment', alignment, defaultValue: null));

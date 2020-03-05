@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -90,7 +90,7 @@ class _BottomAppBarDemoState extends State<BottomAppBarDemo> {
   static void _showSnackbar() {
     const String text =
       "When the Scaffold's floating action button location changes, "
-      'the floating action button animates to its new position.'
+      'the floating action button animates to its new position. '
       'The BottomAppBar adapts its shape appropriately.';
     _scaffoldKey.currentState.showSnackBar(
       const SnackBar(content: Text(text)),
@@ -156,34 +156,36 @@ class _BottomAppBarDemoState extends State<BottomAppBarDemo> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 88.0),
-        children: <Widget>[
-          const _Heading('FAB Shape'),
+      body: Scrollbar(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 88.0),
+          children: <Widget>[
+            const _Heading('FAB Shape'),
 
-          _RadioItem<Widget>(kCircularFab, _fabShape, _onFabShapeChanged),
-          _RadioItem<Widget>(kDiamondFab, _fabShape, _onFabShapeChanged),
-          _RadioItem<Widget>(kNoFab, _fabShape, _onFabShapeChanged),
+            _RadioItem<Widget>(kCircularFab, _fabShape, _onFabShapeChanged),
+            _RadioItem<Widget>(kDiamondFab, _fabShape, _onFabShapeChanged),
+            _RadioItem<Widget>(kNoFab, _fabShape, _onFabShapeChanged),
 
-          const Divider(),
-          const _Heading('Notch'),
+            const Divider(),
+            const _Heading('Notch'),
 
-          _RadioItem<bool>(kShowNotchTrue, _showNotch, _onShowNotchChanged),
-          _RadioItem<bool>(kShowNotchFalse, _showNotch, _onShowNotchChanged),
+            _RadioItem<bool>(kShowNotchTrue, _showNotch, _onShowNotchChanged),
+            _RadioItem<bool>(kShowNotchFalse, _showNotch, _onShowNotchChanged),
 
-          const Divider(),
-          const _Heading('FAB Position'),
+            const Divider(),
+            const _Heading('FAB Position'),
 
-          _RadioItem<FloatingActionButtonLocation>(kFabEndDocked, _fabLocation, _onFabLocationChanged),
-          _RadioItem<FloatingActionButtonLocation>(kFabCenterDocked, _fabLocation, _onFabLocationChanged),
-          _RadioItem<FloatingActionButtonLocation>(kFabEndFloat, _fabLocation, _onFabLocationChanged),
-          _RadioItem<FloatingActionButtonLocation>(kFabCenterFloat, _fabLocation, _onFabLocationChanged),
+            _RadioItem<FloatingActionButtonLocation>(kFabEndDocked, _fabLocation, _onFabLocationChanged),
+            _RadioItem<FloatingActionButtonLocation>(kFabCenterDocked, _fabLocation, _onFabLocationChanged),
+            _RadioItem<FloatingActionButtonLocation>(kFabEndFloat, _fabLocation, _onFabLocationChanged),
+            _RadioItem<FloatingActionButtonLocation>(kFabCenterFloat, _fabLocation, _onFabLocationChanged),
 
-          const Divider(),
-          const _Heading('App bar color'),
+            const Divider(),
+            const _Heading('App bar color'),
 
-          _ColorsItem(kBabColors, _babColor, _onBabColorChanged),
-        ],
+            _ColorsItem(kBabColors, _babColor, _onBabColorChanged),
+          ],
+        ),
       ),
       floatingActionButton: _fabShape.value,
       floatingActionButtonLocation: _fabLocation.value,
@@ -251,12 +253,12 @@ class _RadioItem<T> extends StatelessWidget {
                   },
                   child: Text(
                     value.title,
-                    style: theme.textTheme.subhead,
+                    style: theme.textTheme.subtitle1,
                   ),
                 ),
               ),
             ),
-          ]
+          ],
         ),
       ),
     );
@@ -321,7 +323,7 @@ class _Heading extends StatelessWidget {
       alignment: AlignmentDirectional.centerStart,
       child: Text(
         text,
-        style: theme.textTheme.body1.copyWith(
+        style: theme.textTheme.bodyText2.copyWith(
           color: theme.primaryColor,
         ),
       ),
@@ -333,7 +335,7 @@ class _DemoBottomAppBar extends StatelessWidget {
   const _DemoBottomAppBar({
     this.color,
     this.fabLocation,
-    this.shape
+    this.shape,
   });
 
   final Color color;
@@ -347,52 +349,42 @@ class _DemoBottomAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> rowContents = <Widget> [
-      IconButton(
-        icon: const Icon(Icons.menu, semanticLabel: 'Show bottom sheet'),
-        onPressed: () {
-          showModalBottomSheet<void>(
-            context: context,
-            builder: (BuildContext context) => const _DemoDrawer(),
-          );
-        },
-      ),
-    ];
-
-    if (kCenterLocations.contains(fabLocation)) {
-      rowContents.add(
-        const Expanded(child: SizedBox()),
-      );
-    }
-
-    rowContents.addAll(<Widget> [
-      IconButton(
-        icon: const Icon(Icons.search, semanticLabel: 'show search action',),
-        onPressed: () {
-          Scaffold.of(context).showSnackBar(
-            const SnackBar(content: Text('This is a dummy search action.')),
-          );
-        },
-      ),
-      IconButton(
-        icon: Icon(
-          Theme.of(context).platform == TargetPlatform.iOS
-              ? Icons.more_horiz
-              : Icons.more_vert,
-          semanticLabel: 'Show menu actions',
-        ),
-        onPressed: () {
-          Scaffold.of(context).showSnackBar(
-            const SnackBar(content: Text('This is a dummy menu action.')),
-          );
-        },
-      ),
-    ]);
-
     return BottomAppBar(
       color: color,
-      child: Row(children: rowContents),
       shape: shape,
+      child: Row(children: <Widget>[
+        IconButton(
+          icon: const Icon(Icons.menu, semanticLabel: 'Show bottom sheet'),
+          onPressed: () {
+            showModalBottomSheet<void>(
+              context: context,
+              builder: (BuildContext context) => const _DemoDrawer(),
+            );
+          },
+        ),
+        if (kCenterLocations.contains(fabLocation)) const Expanded(child: SizedBox()),
+        IconButton(
+          icon: const Icon(Icons.search, semanticLabel: 'show search action',),
+          onPressed: () {
+            Scaffold.of(context).showSnackBar(
+              const SnackBar(content: Text('This is a dummy search action.')),
+            );
+          },
+        ),
+        IconButton(
+          icon: Icon(
+            Theme.of(context).platform == TargetPlatform.iOS
+                ? Icons.more_horiz
+                : Icons.more_vert,
+            semanticLabel: 'Show menu actions',
+          ),
+          onPressed: () {
+            Scaffold.of(context).showSnackBar(
+              const SnackBar(content: Text('This is a dummy menu action.')),
+            );
+          },
+        ),
+      ]),
     );
   }
 }
@@ -513,7 +505,7 @@ class _DiamondBorder extends ShapeBorder {
   }
 
   @override
-  void paint(Canvas canvas, Rect rect, { TextDirection textDirection }) {}
+  void paint(Canvas canvas, Rect rect, { TextDirection textDirection }) { }
 
   // This border doesn't support scaling.
   @override

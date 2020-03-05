@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,8 +7,7 @@ import 'package:flutter_gallery/demo/material/expansion_panels_demo.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<void> main() async {
-  testWidgets('Expansion panel demo: radio tile selection changes on tap',
-      (WidgetTester tester) async {
+  testWidgets('Expansion panel demo: radio tile selection changes on tap', (WidgetTester tester) async {
     await tester.pumpWidget(MaterialApp(home: ExpansionPanelsDemo()));
 
     expect(_expandIcons, findsNWidgets(3));

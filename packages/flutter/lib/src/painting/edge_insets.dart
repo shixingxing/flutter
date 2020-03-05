@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -33,6 +33,18 @@ abstract class EdgeInsetsGeometry {
   double get _right;
   double get _start;
   double get _top;
+
+  /// An [EdgeInsetsGeometry] with infinite offsets in each direction.
+  ///
+  /// Can be used as an infinite upper bound for [clamp].
+  static const EdgeInsetsGeometry infinity = _MixedEdgeInsets.fromLRSETB(
+    double.infinity,
+    double.infinity,
+    double.infinity,
+    double.infinity,
+    double.infinity,
+    double.infinity,
+  );
 
   /// Whether every dimension is non-negative.
   bool get isNonNegative {
@@ -146,6 +158,19 @@ abstract class EdgeInsetsGeometry {
     );
   }
 
+  /// Returns the a new [EdgeInsetsGeometry] object with all values greater than
+  /// or equal to `min`, and less than or equal to `max`.
+  EdgeInsetsGeometry clamp(EdgeInsetsGeometry min, EdgeInsetsGeometry max) {
+    return _MixedEdgeInsets.fromLRSETB(
+      _left.clamp(min._left, max._left) as double,
+      _right.clamp(min._right, max._right) as double,
+      _start.clamp(min._start, max._start) as double,
+      _end.clamp(min._end, max._end) as double,
+      _top.clamp(min._top, max._top) as double,
+      _bottom.clamp(min._bottom, max._bottom) as double,
+    );
+  }
+
   /// Returns the [EdgeInsetsGeometry] object with each dimension negated.
   ///
   /// This is the same as multiplying the object by -1.0.
@@ -254,16 +279,14 @@ abstract class EdgeInsetsGeometry {
   }
 
   @override
-  bool operator ==(dynamic other) {
-    if (other is! EdgeInsetsGeometry)
-      return false;
-    final EdgeInsetsGeometry typedOther = other;
-    return _left == typedOther._left
-        && _right == typedOther._right
-        && _start == typedOther._start
-        && _end == typedOther._end
-        && _top == typedOther._top
-        && _bottom == typedOther._bottom;
+  bool operator ==(Object other) {
+    return other is EdgeInsetsGeometry
+        && other._left == _left
+        && other._right == _right
+        && other._start == _start
+        && other._end == _end
+        && other._top == _top
+        && other._bottom == _bottom;
   }
 
   @override
@@ -282,7 +305,7 @@ abstract class EdgeInsetsGeometry {
 /// _start_, top, _end_, and bottom, where start and end are resolved in terms
 /// of a [TextDirection] (typically obtained from the ambient [Directionality]).
 ///
-/// {@tool sample}
+/// {@tool snippet}
 ///
 /// Here are some examples of how to create [EdgeInsets] instances:
 ///
@@ -292,7 +315,7 @@ abstract class EdgeInsetsGeometry {
 /// const EdgeInsets.all(8.0)
 /// ```
 /// {@end-tool}
-/// {@tool sample}
+/// {@tool snippet}
 ///
 /// Eight pixel margin above and below, no horizontal margins:
 ///
@@ -300,7 +323,7 @@ abstract class EdgeInsetsGeometry {
 /// const EdgeInsets.symmetric(vertical: 8.0)
 /// ```
 /// {@end-tool}
-/// {@tool sample}
+/// {@tool snippet}
 ///
 /// Left margin indent of 40 pixels:
 ///
@@ -321,7 +344,7 @@ class EdgeInsets extends EdgeInsetsGeometry {
 
   /// Creates insets where all the offsets are `value`.
   ///
-  /// {@tool sample}
+  /// {@tool snippet}
   ///
   /// Typical eight-pixel margin on all sides:
   ///
@@ -330,11 +353,14 @@ class EdgeInsets extends EdgeInsetsGeometry {
   /// ```
   /// {@end-tool}
   const EdgeInsets.all(double value)
-      : left = value, top = value, right = value, bottom = value;
+    : left = value,
+      top = value,
+      right = value,
+      bottom = value;
 
   /// Creates insets with only the given values non-zero.
   ///
-  /// {@tool sample}
+  /// {@tool snippet}
   ///
   /// Left margin indent of 40 pixels:
   ///
@@ -346,12 +372,12 @@ class EdgeInsets extends EdgeInsetsGeometry {
     this.left = 0.0,
     this.top = 0.0,
     this.right = 0.0,
-    this.bottom = 0.0
+    this.bottom = 0.0,
   });
 
   /// Creates insets with symmetrical vertical and horizontal offsets.
   ///
-  /// {@tool sample}
+  /// {@tool snippet}
   ///
   /// Eight pixel margin above and below, no horizontal margins:
   ///
@@ -359,9 +385,13 @@ class EdgeInsets extends EdgeInsetsGeometry {
   /// const EdgeInsets.symmetric(vertical: 8.0)
   /// ```
   /// {@end-tool}
-  const EdgeInsets.symmetric({ double vertical = 0.0,
-                             double horizontal = 0.0 })
-    : left = horizontal, top = vertical, right = horizontal, bottom = vertical;
+  const EdgeInsets.symmetric({
+    double vertical = 0.0,
+    double horizontal = 0.0,
+  }) : left = horizontal,
+       top = vertical,
+       right = horizontal,
+       bottom = vertical;
 
   /// Creates insets that match the given window padding.
   ///
@@ -581,7 +611,7 @@ class EdgeInsets extends EdgeInsetsGeometry {
     double top,
     double right,
     double bottom,
-}) {
+  }) {
     return EdgeInsets.only(
       left: left ?? this.left,
       top: top ?? this.top,
@@ -608,7 +638,7 @@ class EdgeInsetsDirectional extends EdgeInsetsGeometry {
 
   /// Creates insets with only the given values non-zero.
   ///
-  /// {@tool sample}
+  /// {@tool snippet}
   ///
   /// A margin indent of 40 pixels on the leading side:
   ///
@@ -620,7 +650,7 @@ class EdgeInsetsDirectional extends EdgeInsetsGeometry {
     this.start = 0.0,
     this.top = 0.0,
     this.end = 0.0,
-    this.bottom = 0.0
+    this.bottom = 0.0,
   });
 
   /// An [EdgeInsetsDirectional] with zero offsets in each direction.

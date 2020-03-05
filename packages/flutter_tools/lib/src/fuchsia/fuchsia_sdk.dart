@@ -1,117 +1,158 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:convert';
 
-import '../base/common.dart';
 import '../base/context.dart';
 import '../base/file_system.dart';
 import '../base/io.dart';
-import '../base/platform.dart';
-import '../base/process.dart';
-import '../base/process_manager.dart';
+import '../convert.dart';
+import '../globals.dart' as globals;
+
+import 'fuchsia_dev_finder.dart';
+import 'fuchsia_kernel_compiler.dart';
+import 'fuchsia_pm.dart';
 
 /// The [FuchsiaSdk] instance.
-FuchsiaSdk get fuchsiaSdk => context[FuchsiaSdk];
+FuchsiaSdk get fuchsiaSdk => context.get<FuchsiaSdk>();
 
 /// The [FuchsiaArtifacts] instance.
-FuchsiaArtifacts get fuchsiaArtifacts => context[FuchsiaArtifacts];
+FuchsiaArtifacts get fuchsiaArtifacts => context.get<FuchsiaArtifacts>();
+
+/// Returns [true] if the current platform supports Fuchsia targets.
+bool isFuchsiaSupportedPlatform() {
+  return globals.platform.isLinux || globals.platform.isMacOS;
+}
 
 /// The Fuchsia SDK shell commands.
 ///
 /// This workflow assumes development within the fuchsia source tree,
 /// including a working fx command-line tool in the user's PATH.
 class FuchsiaSdk {
-  static const List<String> _netaddrCommand = <String>['fx', 'netaddr', '--fuchsia', '--nowait'];
-  static const List<String> _netlsCommand = <String>['fx', 'netls', '--nowait'];
-  static const List<String> _syslogCommand = <String>['fx', 'syslog', '--clock', 'Local'];
+  /// Interface to the 'pm' tool.
+  FuchsiaPM get fuchsiaPM => _fuchsiaPM ??= FuchsiaPM();
+  FuchsiaPM _fuchsiaPM;
 
-  /// Invokes the `netaddr` command.
-  ///
-  /// This returns the network address of an attached fuchsia device. Does
-  /// not currently support multiple attached devices.
-  ///
+  /// Interface to the 'device-finder' tool.
+  FuchsiaDevFinder _fuchsiaDevFinder;
+  FuchsiaDevFinder get fuchsiaDevFinder =>
+      _fuchsiaDevFinder ??= FuchsiaDevFinder();
+
+  /// Interface to the 'kernel_compiler' tool.
+  FuchsiaKernelCompiler _fuchsiaKernelCompiler;
+  FuchsiaKernelCompiler get fuchsiaKernelCompiler =>
+      _fuchsiaKernelCompiler ??= FuchsiaKernelCompiler();
+
   /// Example output:
-  ///     $ fx netaddr --fuchsia --nowait
-  ///     > fe80::9aaa:fcff:fe60:d3af%eth1
-  Future<String> netaddr() async {
-    try {
-      final RunResult process = await runAsync(_netaddrCommand);
-      return process.stdout.trim();
-    } on ArgumentError catch (exception) {
-      throwToolExit('$exception');
+  ///    $ device-finder list -full
+  ///    > 192.168.42.56 paper-pulp-bush-angel
+  Future<String> listDevices() async {
+    if (fuchsiaArtifacts.devFinder == null ||
+        !fuchsiaArtifacts.devFinder.existsSync()) {
+      return null;
     }
-    return null;
+    final List<String> devices = await fuchsiaDevFinder.list();
+    if (devices == null) {
+      return null;
+    }
+    return devices.isNotEmpty ? devices[0] : null;
   }
 
-  /// Returns the fuchsia system logs for an attached device.
-  ///
-  /// Does not currently support multiple attached devices.
-  Stream<String> syslogs() {
+  /// Returns the fuchsia system logs for an attached device where
+  /// [id] is the IP address of the device.
+  Stream<String> syslogs(String id) {
     Process process;
     try {
       final StreamController<String> controller = StreamController<String>(onCancel: () {
         process.kill();
       });
-      processManager.start(_syslogCommand).then((Process newProcess) {
+      if (fuchsiaArtifacts.sshConfig == null ||
+          !fuchsiaArtifacts.sshConfig.existsSync()) {
+        globals.printError('Cannot read device logs: No ssh config.');
+        globals.printError('Have you set FUCHSIA_SSH_CONFIG or FUCHSIA_BUILD_DIR?');
+        return null;
+      }
+      const String remoteCommand = 'log_listener --clock Local';
+      final List<String> cmd = <String>[
+        'ssh',
+        '-F',
+        fuchsiaArtifacts.sshConfig.absolute.path,
+        id, // The device's IP.
+        remoteCommand,
+      ];
+      globals.processManager.start(cmd).then((Process newProcess) {
         if (controller.isClosed) {
           return;
         }
         process = newProcess;
         process.exitCode.whenComplete(controller.close);
-        controller.addStream(process.stdout.transform(utf8.decoder).transform(const LineSplitter()));
+        controller.addStream(process.stdout
+            .transform(utf8.decoder)
+            .transform(const LineSplitter()));
       });
       return controller.stream;
-    } on ArgumentError catch (exception) {
-      throwToolExit('$exception');
+    } catch (exception) {
+      globals.printTrace('$exception');
     }
-    return null;
-  }
-
-  /// Invokes the `netls` command.
-  ///
-  /// This lists attached fuchsia devices with their name and address. Does
-  /// not currently support multiple attached devices.
-  ///
-  /// Example output:
-  ///     $ fx netls --nowait
-  ///     > device liliac-shore-only-last (fe80::82e4:da4d:fe81:227d/3)
-  Future<String> netls() async {
-    try {
-      final RunResult process = await runAsync(_netlsCommand);
-      return process.stdout;
-    } on ArgumentError catch (exception) {
-      throwToolExit('$exception');
-    }
-    return null;
+    return const Stream<String>.empty();
   }
 }
 
 /// Fuchsia-specific artifacts used to interact with a device.
 class FuchsiaArtifacts {
   /// Creates a new [FuchsiaArtifacts].
+  FuchsiaArtifacts({
+    this.sshConfig,
+    this.devFinder,
+    this.pm,
+  });
+
+  /// Creates a new [FuchsiaArtifacts] using the cached Fuchsia SDK.
   ///
-  /// May optionally provide a file `sshConfig` file.
-  FuchsiaArtifacts({File sshConfig})
-    : _sshConfig = sshConfig;
+  /// Finds tools under bin/cache/artifacts/fuchsia/tools.
+  /// Queries environment variables (first FUCHSIA_BUILD_DIR, then
+  /// FUCHSIA_SSH_CONFIG) to find the ssh configuration needed to talk to
+  /// a device.
+  factory FuchsiaArtifacts.find() {
+    if (!isFuchsiaSupportedPlatform()) {
+      // Don't try to find the artifacts on platforms that are not supported.
+      return FuchsiaArtifacts();
+    }
+    // If FUCHSIA_BUILD_DIR is defined, then look for the ssh_config dir
+    // relative to it. Next, if FUCHSIA_SSH_CONFIG is defined, then use it.
+    // TODO(zra): Consider passing the ssh config path in with a flag.
+    File sshConfig;
+    if (globals.platform.environment.containsKey(_kFuchsiaBuildDir)) {
+      sshConfig = globals.fs.file(globals.fs.path.join(
+          globals.platform.environment[_kFuchsiaBuildDir], 'ssh-keys', 'ssh_config'));
+    } else if (globals.platform.environment.containsKey(_kFuchsiaSshConfig)) {
+      sshConfig = globals.fs.file(globals.platform.environment[_kFuchsiaSshConfig]);
+    }
+
+    final String fuchsia = globals.cache.getArtifactDirectory('fuchsia').path;
+    final String tools = globals.fs.path.join(fuchsia, 'tools');
+    final File devFinder = globals.fs.file(globals.fs.path.join(tools, 'device-finder'));
+    final File pm = globals.fs.file(globals.fs.path.join(tools, 'pm'));
+
+    return FuchsiaArtifacts(
+      sshConfig: sshConfig,
+      devFinder: devFinder.existsSync() ? devFinder : null,
+      pm: pm.existsSync() ? pm : null,
+    );
+  }
+
+  static const String _kFuchsiaSshConfig = 'FUCHSIA_SSH_CONFIG';
+  static const String _kFuchsiaBuildDir = 'FUCHSIA_BUILD_DIR';
 
   /// The location of the SSH configuration file used to interact with a
-  /// fuchsia device.
-  ///
-  /// Requires the env variable `BUILD_DIR` to be set if not provided by
-  /// the constructor.
-  File get sshConfig {
-    if (_sshConfig == null) {
-      final String buildDirectory = platform.environment['BUILD_DIR'];
-      if (buildDirectory == null) {
-        throwToolExit('BUILD_DIR must be supplied to locate SSH keys. For example:\n'
-          '  export BUILD_DIR=path/to/fuchsia/out/x64\n');
-      }
-      _sshConfig = fs.file('$buildDirectory/ssh-keys/ssh_config');
-    }
-    return _sshConfig;
-  }
-  File _sshConfig;
+  /// Fuchsia device.
+  final File sshConfig;
+
+  /// The location of the dev finder tool used to locate connected
+  /// Fuchsia devices.
+  final File devFinder;
+
+  /// The pm tool.
+  final File pm;
 }

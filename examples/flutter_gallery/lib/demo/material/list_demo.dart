@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -68,7 +68,7 @@ class _ListDemoState extends State<ListDemo> {
                   value: _showAvatars ? _MaterialListType.oneLineWithAvatar : _MaterialListType.oneLine,
                   groupValue: _itemType,
                   onChanged: changeItemType,
-                )
+                ),
               ),
             ),
             MergeSemantics(
@@ -79,7 +79,7 @@ class _ListDemoState extends State<ListDemo> {
                   value: _MaterialListType.twoLine,
                   groupValue: _itemType,
                   onChanged: changeItemType,
-                )
+                ),
               ),
             ),
             MergeSemantics(

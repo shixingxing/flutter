@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -40,10 +40,10 @@ class _PersistentBottomSheetDemoState extends State<PersistentBottomSheetDemo> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: themeData.accentColor,
-              fontSize: 24.0
-            )
-          )
-        )
+              fontSize: 24.0,
+            ),
+          ),
+        ),
       );
     })
     .closed.whenComplete(() {
@@ -66,8 +66,8 @@ class _PersistentBottomSheetDemoState extends State<PersistentBottomSheetDemo> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text('OK')
-            )
+              child: const Text('OK'),
+            ),
           ],
         );
       },
@@ -95,9 +95,9 @@ class _PersistentBottomSheetDemoState extends State<PersistentBottomSheetDemo> {
       body: Center(
         child: RaisedButton(
           onPressed: _showBottomSheetCallback,
-          child: const Text('SHOW BOTTOM SHEET')
-        )
-      )
+          child: const Text('SHOW BOTTOM SHEET'),
+        ),
+      ),
     );
   }
 }

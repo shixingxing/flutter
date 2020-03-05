@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -25,7 +25,7 @@ const String _outlineText =
 const String _outlineCode = 'buttons_outline';
 
 const String _dropdownText =
-    'A dropdown button displays a menu that\'s used to select a value from a '
+    "A dropdown button displays a menu that's used to select a value from a "
     'small set of values. The button displays the current value and a down '
     'arrow.';
 
@@ -33,7 +33,7 @@ const String _dropdownCode = 'buttons_dropdown';
 
 const String _iconText =
     'IconButtons are appropriate for toggle buttons that allow a single choice '
-    'to be selected or deselected, such as adding or removing an item\'s star.';
+    "to be selected or deselected, such as adding or removing an item's star.";
 
 const String _iconCode = 'buttons_icon';
 
@@ -323,7 +323,7 @@ class _ButtonsDemoState extends State<ButtonsDemo> {
               },
               items: <String>[
                   'One', 'Two', 'Free', 'Four', 'Can', 'I', 'Have', 'A', 'Little',
-                  'Bit', 'More', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'
+                  'Bit', 'More', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
                  ]
                 .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
@@ -363,7 +363,7 @@ class _ButtonsDemoState extends State<ButtonsDemo> {
               semanticLabel: 'Thumbs not up',
             ),
             onPressed: null,
-          )
+          ),
         ]
         .map<Widget>((Widget button) => SizedBox(width: 64.0, height: 64.0, child: button))
         .toList(),

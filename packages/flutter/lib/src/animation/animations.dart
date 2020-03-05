@@ -1,9 +1,8 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'dart:math' as math;
-import 'dart:ui' show VoidCallback;
 
 import 'package:flutter/foundation.dart';
 
@@ -234,8 +233,8 @@ class ProxyAnimation extends Animation<double>
   @override
   String toString() {
     if (parent == null)
-      return '$runtimeType(null; ${super.toStringDetails()} ${value.toStringAsFixed(3)})';
-    return '$parent\u27A9$runtimeType';
+      return '${objectRuntimeType(this, 'ProxyAnimation')}(null; ${super.toStringDetails()} ${value.toStringAsFixed(3)})';
+    return '$parent\u27A9${objectRuntimeType(this, 'ProxyAnimation')}';
   }
 }
 
@@ -311,7 +310,7 @@ class ReverseAnimation extends Animation<double>
 
   @override
   String toString() {
-    return '$parent\u27AA$runtimeType';
+    return '$parent\u27AA${objectRuntimeType(this, 'ReverseAnimation')}';
   }
 }
 
@@ -328,7 +327,7 @@ class ReverseAnimation extends Animation<double>
 ///
 /// If you want to apply a [Curve] to a [Tween], consider using [CurveTween].
 ///
-/// {@tool sample}
+/// {@tool snippet}
 ///
 /// The following code snippet shows how you can apply a curve to a linear
 /// animation produced by an [AnimationController] `controller`.
@@ -340,7 +339,7 @@ class ReverseAnimation extends Animation<double>
 /// );
 /// ```
 /// {@end-tool}
-/// {@tool sample}
+/// {@tool snippet}
 ///
 /// This second code snippet shows how to apply a different curve in the forward
 /// direction than in the reverse direction. This can't be done using a
@@ -373,7 +372,7 @@ class CurvedAnimation extends Animation<double> with AnimationWithParentMixin<do
   CurvedAnimation({
     @required this.parent,
     @required this.curve,
-    this.reverseCurve
+    this.reverseCurve,
   }) : assert(parent != null),
        assert(curve != null) {
     _updateCurveDirection(parent.status);
@@ -493,7 +492,7 @@ class TrainHoppingAnimation extends Animation<double>
   /// can be null. If the next train is null, then this object will just proxy
   /// the first animation and never hop.
   TrainHoppingAnimation(this._currentTrain, this._nextTrain, { this.onSwitchedTrain })
-    : assert(_currentTrain != null) {
+      : assert(_currentTrain != null) {
     if (_nextTrain != null) {
       if (_currentTrain.value == _nextTrain.value) {
         _currentTrain = _nextTrain;
@@ -593,8 +592,8 @@ class TrainHoppingAnimation extends Animation<double>
   @override
   String toString() {
     if (_nextTrain != null)
-      return '$currentTrain\u27A9$runtimeType(next: $_nextTrain)';
-    return '$currentTrain\u27A9$runtimeType(no next)';
+      return '$currentTrain\u27A9${objectRuntimeType(this, 'TrainHoppingAnimation')}(next: $_nextTrain)';
+    return '$currentTrain\u27A9${objectRuntimeType(this, 'TrainHoppingAnimation')}(no next)';
   }
 }
 
@@ -654,7 +653,7 @@ abstract class CompoundAnimation<T> extends Animation<T>
 
   @override
   String toString() {
-    return '$runtimeType($first, $next)';
+    return '${objectRuntimeType(this, 'CompoundAnimation')}($first, $next)';
   }
 
   AnimationStatus _lastStatus;
@@ -701,7 +700,7 @@ class AnimationMax<T extends num> extends CompoundAnimation<T> {
   ///
   /// Both arguments must be non-null. Either can be an [AnimationMax] itself
   /// to combine multiple animations.
-  AnimationMax(Animation<T> first, Animation<T> next): super(first: first, next: next);
+  AnimationMax(Animation<T> first, Animation<T> next) : super(first: first, next: next);
 
   @override
   T get value => math.max(first.value, next.value);
@@ -716,7 +715,7 @@ class AnimationMin<T extends num> extends CompoundAnimation<T> {
   ///
   /// Both arguments must be non-null. Either can be an [AnimationMin] itself
   /// to combine multiple animations.
-  AnimationMin(Animation<T> first, Animation<T> next): super(first: first, next: next);
+  AnimationMin(Animation<T> first, Animation<T> next) : super(first: first, next: next);
 
   @override
   T get value => math.min(first.value, next.value);

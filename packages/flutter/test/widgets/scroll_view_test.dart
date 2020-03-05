@@ -1,9 +1,10 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 
 import 'states.dart';
@@ -16,6 +17,7 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: ListView(
+          dragStartBehavior: DragStartBehavior.down,
           children: kStates.map<Widget>((String state) {
             return GestureDetector(
               onTap: () {
@@ -26,6 +28,7 @@ void main() {
                 color: const Color(0xFF0000FF),
                 child: Text(state),
               ),
+              dragStartBehavior: DragStartBehavior.down,
             );
           }).toList(),
         ),
@@ -54,6 +57,7 @@ void main() {
       return Directionality(
         textDirection: TextDirection.ltr,
         child: ListView(
+          dragStartBehavior: DragStartBehavior.down,
           children: kStates.take(n).map<Widget>((String state) {
             return Container(
               height: 200.0,
@@ -85,11 +89,13 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: CustomScrollView(
+          dragStartBehavior: DragStartBehavior.down,
           slivers: <Widget>[
             SliverList(
               delegate: SliverChildListDelegate(
                 kStates.map<Widget>((String state) {
                   return GestureDetector(
+                    dragStartBehavior: DragStartBehavior.down,
                     onTap: () {
                       log.add(state);
                     },
@@ -320,22 +326,22 @@ void main() {
 
   testWidgets('Primary ListViews are always scrollable', (WidgetTester tester) async {
     final ListView view = ListView(primary: true);
-    expect(view.physics, isInstanceOf<AlwaysScrollableScrollPhysics>());
+    expect(view.physics, isA<AlwaysScrollableScrollPhysics>());
   });
 
   testWidgets('Non-primary ListViews are not always scrollable', (WidgetTester tester) async {
     final ListView view = ListView(primary: false);
-    expect(view.physics, isNot(isInstanceOf<AlwaysScrollableScrollPhysics>()));
+    expect(view.physics, isNot(isA<AlwaysScrollableScrollPhysics>()));
   });
 
   testWidgets('Defaulting-to-primary ListViews are always scrollable', (WidgetTester tester) async {
     final ListView view = ListView(scrollDirection: Axis.vertical);
-    expect(view.physics, isInstanceOf<AlwaysScrollableScrollPhysics>());
+    expect(view.physics, isA<AlwaysScrollableScrollPhysics>());
   });
 
   testWidgets('Defaulting-to-not-primary ListViews are not always scrollable', (WidgetTester tester) async {
     final ListView view = ListView(scrollDirection: Axis.horizontal);
-    expect(view.physics, isNot(isInstanceOf<AlwaysScrollableScrollPhysics>()));
+    expect(view.physics, isNot(isA<AlwaysScrollableScrollPhysics>()));
   });
 
   testWidgets('primary:true leads to scrolling', (WidgetTester tester) async {
@@ -344,7 +350,10 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: NotificationListener<OverscrollNotification>(
-          onNotification: (OverscrollNotification message) { scrolled = true; return false; },
+          onNotification: (OverscrollNotification message) {
+            scrolled = true;
+            return false;
+          },
           child: ListView(
             primary: true,
             children: const <Widget>[],
@@ -362,7 +371,10 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: NotificationListener<OverscrollNotification>(
-          onNotification: (OverscrollNotification message) { scrolled = true; return false; },
+          onNotification: (OverscrollNotification message) {
+            scrolled = true;
+            return false;
+          },
           child: ListView(
             primary: false,
             children: const <Widget>[],
@@ -380,7 +392,10 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: NotificationListener<OverscrollNotification>(
-          onNotification: (OverscrollNotification message) { scrolled = true; return false; },
+          onNotification: (OverscrollNotification message) {
+            scrolled = true;
+            return false;
+          },
           child: ListView(
             primary: false,
             physics: const AlwaysScrollableScrollPhysics(),
@@ -399,7 +414,10 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: NotificationListener<OverscrollNotification>(
-          onNotification: (OverscrollNotification message) { scrolled = true; return false; },
+          onNotification: (OverscrollNotification message) {
+            scrolled = true;
+            return false;
+          },
           child: ListView(
             primary: true,
             physics: const ScrollPhysics(),
@@ -425,7 +443,7 @@ void main() {
             separatorBuilder: (BuildContext context, int index) {
               if (index == 0) {
                 return firstSeparator;
-              } else  {
+              } else {
                 return const Divider();
               }
             },
@@ -441,7 +459,7 @@ void main() {
 
     // A separatorBuilder that returns null throws a FlutterError
     await tester.pumpWidget(buildFrame(null));
-    expect(tester.takeException(), isInstanceOf<FlutterError>());
+    expect(tester.takeException(), isFlutterError);
     expect(find.byType(ErrorWidget), findsOneWidget);
   });
 
@@ -502,7 +520,7 @@ void main() {
 
     // When it does throw, one error widget is rendered in the item's place
     await tester.pumpWidget(buildFrame(true));
-    expect(tester.takeException(), isInstanceOf<Exception>());
+    expect(tester.takeException(), isA<Exception>());
     expect(finder, findsOneWidget);
   });
 
@@ -538,7 +556,36 @@ void main() {
 
     // When it does throw, one error widget is rendered in the separator's place
     await tester.pumpWidget(buildFrame(true));
-    expect(tester.takeException(), isInstanceOf<Exception>());
+    expect(tester.takeException(), isA<Exception>());
     expect(finder, findsOneWidget);
+  });
+
+  testWidgets('ListView.builder asserts on negative childCount', (WidgetTester tester) async {
+    expect(() => ListView.builder(
+      itemBuilder: (BuildContext context, int index) {
+        return const SizedBox();
+      },
+      itemCount: -1,
+    ), throwsAssertionError);
+  });
+
+  testWidgets('ListView.builder asserts on negative semanticChildCount', (WidgetTester tester) async {
+    expect(() => ListView.builder(
+      itemBuilder: (BuildContext context, int index) {
+        return const SizedBox();
+      },
+      itemCount: 1,
+      semanticChildCount: -1,
+    ), throwsAssertionError);
+  });
+
+  testWidgets('ListView.builder asserts on nonsensical childCount/semanticChildCount', (WidgetTester tester) async {
+    expect(() => ListView.builder(
+      itemBuilder: (BuildContext context, int index) {
+        return const SizedBox();
+      },
+      itemCount: 1,
+      semanticChildCount: 4,
+    ), throwsAssertionError);
   });
 }

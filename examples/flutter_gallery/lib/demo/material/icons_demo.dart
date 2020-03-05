@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -58,13 +58,15 @@ class IconsDemoState extends State<IconsDemo> {
         child: SafeArea(
           top: false,
           bottom: false,
-          child: ListView(
-            padding: const EdgeInsets.all(24.0),
-            children: <Widget>[
-              _IconsDemoCard(handleIconButtonPress, Icons.face), // direction-agnostic icon
-              const SizedBox(height: 24.0),
-              _IconsDemoCard(handleIconButtonPress, Icons.battery_unknown), // direction-aware icon
-            ],
+          child: Scrollbar(
+            child: ListView(
+              padding: const EdgeInsets.all(24.0),
+              children: <Widget>[
+                _IconsDemoCard(handleIconButtonPress, Icons.face), // direction-agnostic icon
+                const SizedBox(height: 24.0),
+                _IconsDemoCard(handleIconButtonPress, Icons.battery_unknown), // direction-aware icon
+              ],
+            ),
           ),
         ),
       ),
@@ -83,7 +85,7 @@ class _IconsDemoCard extends StatelessWidget {
       icon: Icon(icon),
       iconSize: iconSize,
       tooltip: "${enabled ? 'Enabled' : 'Disabled'} icon button",
-      onPressed: enabled ? handleIconButtonPress : null
+      onPressed: enabled ? handleIconButtonPress : null,
     );
   }
 
@@ -107,7 +109,7 @@ class _IconsDemoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final TextStyle textStyle = theme.textTheme.subhead.copyWith(color: theme.textTheme.caption.color);
+    final TextStyle textStyle = theme.textTheme.subtitle1.copyWith(color: theme.textTheme.caption.color);
     return Card(
       child: DefaultTextStyle(
         style: textStyle,

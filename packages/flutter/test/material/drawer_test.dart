@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -57,13 +57,12 @@ void main() {
     expect(find.text('header'), findsOneWidget);
   });
 
-  testWidgets('Drawer dismiss barrier has label on iOS', (WidgetTester tester) async {
+  testWidgets('Drawer dismiss barrier has label', (WidgetTester tester) async {
     final SemanticsTester semantics = SemanticsTester(tester);
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          drawer: Drawer()
+          drawer: Drawer(),
         ),
       ),
     );
@@ -80,15 +79,14 @@ void main() {
     ));
 
     semantics.dispose();
-    debugDefaultTargetPlatformOverride = null;
-  });
+  }, variant: const TargetPlatformVariant(<TargetPlatform>{ TargetPlatform.iOS,  TargetPlatform.macOS }));
 
-  testWidgets('Drawer dismiss barrier has no label on Android', (WidgetTester tester) async {
+  testWidgets('Drawer dismiss barrier has no label', (WidgetTester tester) async {
     final SemanticsTester semantics = SemanticsTester(tester);
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-            drawer: Drawer()
+            drawer: Drawer(),
         ),
       ),
     );
@@ -105,5 +103,67 @@ void main() {
     )));
 
     semantics.dispose();
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('Scaffold drawerScrimColor', (WidgetTester tester) async {
+    // The scrim is a Container within a Semantics node labeled "Dismiss",
+    // within a DrawerController. Sorry.
+    Container getScrim() {
+      return tester.widget<Container>(
+        find.descendant(
+          of: find.descendant(
+            of: find.byType(DrawerController),
+            matching: find.byWidgetPredicate((Widget widget) {
+              return widget is Semantics
+                  && widget.properties.label == 'Dismiss';
+            }),
+          ),
+          matching: find.byType(Container),
+        ),
+      );
+    }
+
+    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
+    Widget buildFrame({ Color drawerScrimColor }) {
+      return MaterialApp(
+        home: Scaffold(
+          key: scaffoldKey,
+          drawerScrimColor: drawerScrimColor,
+          drawer: Drawer(
+            child: Builder(
+              builder: (BuildContext context) {
+                return GestureDetector(
+                  onTap: () { Navigator.pop(context); }, // close drawer
+                );
+              },
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Default drawerScrimColor
+
+    await tester.pumpWidget(buildFrame(drawerScrimColor: null));
+    scaffoldKey.currentState.openDrawer();
+    await tester.pumpAndSettle();
+
+    expect(getScrim().color, Colors.black54);
+
+    await tester.tap(find.byType(Drawer));
+    await tester.pumpAndSettle();
+    expect(find.byType(Drawer), findsNothing);
+
+    // Specific drawerScrimColor
+
+    await tester.pumpWidget(buildFrame(drawerScrimColor: const Color(0xFF323232)));
+    scaffoldKey.currentState.openDrawer();
+    await tester.pumpAndSettle();
+
+    expect(getScrim().color, const Color(0xFF323232));
+
+    await tester.tap(find.byType(Drawer));
+    await tester.pumpAndSettle();
+    expect(find.byType(Drawer), findsNothing);
   });
 }

@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -41,6 +41,7 @@ class _ListDemoState extends State<ReorderableListDemo> {
 
   PersistentBottomSheetController<void> _bottomSheet;
   _ReorderableListType _itemType = _ReorderableListType.threeLine;
+  bool _reverse = false;
   bool _reverseSort = false;
   final List<_ListItem> _items = <String>[
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
@@ -51,7 +52,21 @@ class _ListDemoState extends State<ReorderableListDemo> {
       _itemType = type;
     });
     // Rebuild the bottom sheet to reflect the selected list view.
-    _bottomSheet?.setState(() { });
+    _bottomSheet?.setState(() {
+      // Trigger a rebuild.
+    });
+    // Close the bottom sheet to give the user a clear view of the list.
+    _bottomSheet?.close();
+  }
+
+  void changeReverse(bool newValue) {
+    setState(() {
+      _reverse = newValue;
+    });
+    // Rebuild the bottom sheet to reflect the selected list view.
+    _bottomSheet?.setState(() {
+      // Trigger a rebuild.
+    });
     // Close the bottom sheet to give the user a clear view of the list.
     _bottomSheet?.close();
   }
@@ -67,6 +82,12 @@ class _ListDemoState extends State<ReorderableListDemo> {
             shrinkWrap: true,
             primary: false,
             children: <Widget>[
+              CheckboxListTile(
+                dense: true,
+                title: const Text('Reverse'),
+                value: _reverse,
+                onChanged: changeReverse,
+              ),
               RadioListTile<_ReorderableListType>(
                 dense: true,
                 title: const Text('Horizontal Avatars'),
@@ -186,9 +207,10 @@ class _ListDemoState extends State<ReorderableListDemo> {
           header: _itemType != _ReorderableListType.threeLine
               ? Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Text('Header of the list', style: Theme.of(context).textTheme.headline))
+                  child: Text('Header of the list', style: Theme.of(context).textTheme.headline5))
               : null,
           onReorder: _onReorder,
+          reverse: _reverse,
           scrollDirection: _itemType == _ReorderableListType.horizontalAvatar ? Axis.horizontal : Axis.vertical,
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           children: _items.map<Widget>(buildListTile).toList(),

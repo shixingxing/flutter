@@ -1,4 +1,4 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -34,14 +34,14 @@ class _LinkTextSpan extends TextSpan {
 
 void showGalleryAboutDialog(BuildContext context) {
   final ThemeData themeData = Theme.of(context);
-  final TextStyle aboutTextStyle = themeData.textTheme.body2;
-  final TextStyle linkStyle = themeData.textTheme.body2.copyWith(color: themeData.accentColor);
+  final TextStyle aboutTextStyle = themeData.textTheme.bodyText1;
+  final TextStyle linkStyle = themeData.textTheme.bodyText1.copyWith(color: themeData.accentColor);
 
   showAboutDialog(
     context: context,
-    applicationVersion: 'April 2018 Preview',
+    applicationVersion: 'January 2019',
     applicationIcon: const FlutterLogo(),
-    applicationLegalese: '© 2017 The Chromium Authors',
+    applicationLegalese: '© 2014 The Flutter Authors',
     children: <Widget>[
       Padding(
         padding: const EdgeInsets.only(top: 24.0),
@@ -50,16 +50,16 @@ void showGalleryAboutDialog(BuildContext context) {
             children: <TextSpan>[
               TextSpan(
                 style: aboutTextStyle,
-                text: 'Flutter is an early-stage, open-source project to help developers '
+                text: 'Flutter is an open-source project to help developers '
                       'build high-performance, high-fidelity, mobile apps for '
                       '${defaultTargetPlatform == TargetPlatform.iOS ? 'multiple platforms' : 'iOS and Android'} '
-                      'from a single codebase. This gallery is a preview of '
-                      "Flutter's many widgets, behaviors, animations, layouts, "
-                      'and more. Learn more about Flutter at '
+                      'from a single codebase. This design lab is a playground '
+                      "and showcase of Flutter's many widgets, behaviors, "
+                      'animations, layouts, and more. Learn more about Flutter at ',
               ),
               _LinkTextSpan(
                 style: linkStyle,
-                url: 'https://flutter.io',
+                url: 'https://flutter.dev',
               ),
               TextSpan(
                 style: aboutTextStyle,

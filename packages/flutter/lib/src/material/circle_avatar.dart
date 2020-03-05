@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -17,7 +17,7 @@ import 'theme_data.dart';
 /// such an image, the user's initials. A given user's initials should
 /// always be paired with the same background color, for consistency.
 ///
-/// {@tool sample}
+/// {@tool snippet}
 ///
 /// If the avatar is to have an image, the image should be specified in the
 /// [backgroundImage] property:
@@ -31,7 +31,7 @@ import 'theme_data.dart';
 ///
 /// The image will be cropped to have a circle shape.
 ///
-/// {@tool sample}
+/// {@tool snippet}
 ///
 /// If the avatar is to just have the user's initials, they are typically
 /// provided using a [Text] widget as the [child] and a [backgroundColor]:
@@ -49,7 +49,7 @@ import 'theme_data.dart';
 ///  * [Chip], for representing users or concepts in long form.
 ///  * [ListTile], which can combine an icon (such as a [CircleAvatar]) with
 ///    some text for a fixed height list entry.
-///  * <https://material.google.com/components/chips.html#chips-contact-chips>
+///  * <https://material.io/design/components/chips.html#input-chips>
 class CircleAvatar extends StatelessWidget {
   /// Creates a circle that represents a user.
   const CircleAvatar({
@@ -61,8 +61,8 @@ class CircleAvatar extends StatelessWidget {
     this.radius,
     this.minRadius,
     this.maxRadius,
-  })  : assert(radius == null || (minRadius == null && maxRadius == null)),
-        super(key: key);
+  }) : assert(radius == null || (minRadius == null && maxRadius == null)),
+       super(key: key);
 
   /// The widget below this widget in the tree.
   ///
@@ -166,7 +166,7 @@ class CircleAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     assert(debugCheckHasMediaQuery(context));
     final ThemeData theme = Theme.of(context);
-    TextStyle textStyle = theme.primaryTextTheme.subhead.copyWith(color: foregroundColor);
+    TextStyle textStyle = theme.primaryTextTheme.subtitle1.copyWith(color: foregroundColor);
     Color effectiveBackgroundColor = backgroundColor;
     if (effectiveBackgroundColor == null) {
       switch (ThemeData.estimateBrightnessForColor(textStyle.color)) {

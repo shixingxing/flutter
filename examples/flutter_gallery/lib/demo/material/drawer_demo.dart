@@ -1,8 +1,9 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 
 import '../../gallery/demo.dart';
 
@@ -61,8 +62,11 @@ class _DrawerDemoState extends State<DrawerDemo> with TickerProviderStateMixin {
     switch (Theme.of(context).platform) {
       case TargetPlatform.android:
       case TargetPlatform.fuchsia:
+      case TargetPlatform.linux:
+      case TargetPlatform.windows:
         return Icons.arrow_back;
       case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
         return Icons.arrow_back_ios;
     }
     assert(false);
@@ -72,13 +76,14 @@ class _DrawerDemoState extends State<DrawerDemo> with TickerProviderStateMixin {
   void _showNotImplementedMessage() {
     Navigator.pop(context); // Dismiss the drawer.
     _scaffoldKey.currentState.showSnackBar(const SnackBar(
-      content: Text("The drawer's items don't do anything")
+      content: Text("The drawer's items don't do anything"),
     ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawerDragStartBehavior: DragStartBehavior.down,
       key: _scaffoldKey,
       appBar: AppBar(
         leading: IconButton(
@@ -106,6 +111,7 @@ class _DrawerDemoState extends State<DrawerDemo> with TickerProviderStateMixin {
               ),
               otherAccountsPictures: <Widget>[
                 GestureDetector(
+                  dragStartBehavior: DragStartBehavior.down,
                   onTap: () {
                     _onOtherAccountsTap(context);
                   },
@@ -120,6 +126,7 @@ class _DrawerDemoState extends State<DrawerDemo> with TickerProviderStateMixin {
                   ),
                 ),
                 GestureDetector(
+                  dragStartBehavior: DragStartBehavior.down,
                   onTap: () {
                     _onOtherAccountsTap(context);
                   },
@@ -149,6 +156,7 @@ class _DrawerDemoState extends State<DrawerDemo> with TickerProviderStateMixin {
               removeTop: true,
               child: Expanded(
                 child: ListView(
+                  dragStartBehavior: DragStartBehavior.down,
                   padding: const EdgeInsets.only(top: 8.0),
                   children: <Widget>[
                     Stack(
@@ -228,7 +236,7 @@ class _DrawerDemoState extends State<DrawerDemo> with TickerProviderStateMixin {
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text('Tap here to open the drawer',
-                    style: Theme.of(context).textTheme.subhead,
+                    style: Theme.of(context).textTheme.subtitle1,
                   ),
                 ),
               ],

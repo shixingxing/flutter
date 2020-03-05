@@ -1,4 +1,4 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -19,7 +19,7 @@ class TestSliverChildListDelegate extends SliverChildListDelegate {
 }
 
 class Alive extends StatefulWidget {
-  const Alive(this.alive, this.index);
+  const Alive(this.alive, this.index, { Key key }) : super(key: key);
   final bool alive;
   final int index;
 
@@ -27,7 +27,7 @@ class Alive extends StatefulWidget {
   AliveState createState() => AliveState();
 
   @override
-  String toString({DiagnosticLevel minLevel}) => '$index $alive';
+  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) => '$index $alive';
 }
 
 class AliveState extends State<Alive> with AutomaticKeepAliveClientMixin {
@@ -35,8 +35,10 @@ class AliveState extends State<Alive> with AutomaticKeepAliveClientMixin {
   bool get wantKeepAlive => widget.alive;
 
   @override
-  Widget build(BuildContext context) =>
-     Text('${widget.index}:$wantKeepAlive');
+  Widget build(BuildContext context) {
+    super.build(context);
+    return Text('${widget.index}:$wantKeepAlive');
+  }
 }
 
 typedef WhetherToKeepAlive = bool Function(int);
@@ -176,7 +178,7 @@ void main() {
   });
 
   testWidgets('ListView large scroll jump and keepAlive first child not keepAlive', (WidgetTester tester) async {
-    Future<void> checkAndScroll([String zero = '0:false']) async {
+    Future<void> checkAndScroll([ String zero = '0:false' ]) async {
       expect(find.text(zero), findsOneWidget);
       expect(find.text('1:false'), findsOneWidget);
       expect(find.text('2:false'), findsOneWidget);
@@ -210,7 +212,7 @@ void main() {
 
     await tester.pumpWidget(_StatefulListView((int i) => i % 3 == 0));
     await checkAndScroll('0:true');
-  });
+  }, skip: isBrowser);
 
   testWidgets('ListView can build out of underflow', (WidgetTester tester) async {
     await tester.pumpWidget(
@@ -324,7 +326,7 @@ void main() {
             child: Text('$i', textDirection: TextDirection.ltr),
           );
         },
-      )
+      ),
     );
 
     await tester.pumpWidget(
@@ -526,7 +528,7 @@ void main() {
       children: <Matcher>[
         matchesSemantics(
           children: <Matcher>[
-            matchesSemantics(hasImplicitScrolling: true)
+            matchesSemantics(hasImplicitScrolling: true),
           ],
         ),
       ],

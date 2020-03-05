@@ -1,6 +1,7 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:math' show Random;
 
@@ -32,57 +33,62 @@ class _CupertinoRefreshControlDemoState extends State<CupertinoRefreshControlDem
         return contacts[random.nextInt(contacts.length)]
             // Randomly adds a telephone icon next to the contact or not.
             ..add(random.nextBool().toString());
-      }
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return DefaultTextStyle(
-      style: const TextStyle(
-        fontFamily: '.SF UI Text',
-        inherit: false,
-        fontSize: 17.0,
-        color: CupertinoColors.black,
-      ),
+      style: CupertinoTheme.of(context).textTheme.textStyle,
       child: CupertinoPageScaffold(
-        child: DecoratedBox(
-          decoration: const BoxDecoration(color: Color(0xFFEFEFF4)),
-          child: CustomScrollView(
-            slivers: <Widget>[
-              CupertinoSliverNavigationBar(
-                largeTitle: const Text('Cupertino Refresh'),
-                previousPageTitle: 'Cupertino',
-                trailing: CupertinoDemoDocumentationButton(CupertinoRefreshControlDemo.routeName),
-              ),
-              CupertinoSliverRefreshControl(
-                onRefresh: () {
-                  return Future<void>.delayed(const Duration(seconds: 2))
-                      ..then<void>((_) {
-                        if (mounted) {
-                          setState(() => repopulateList());
-                        }
-                      });
-                },
-              ),
-              SliverSafeArea(
-                top: false, // Top safe area is consumed by the navigation bar.
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (BuildContext context, int index) {
-                      return _ListItem(
-                        name: randomizedContacts[index][0],
-                        place: randomizedContacts[index][1],
-                        date: randomizedContacts[index][2],
-                        called: randomizedContacts[index][3] == 'true',
-                      );
-                    },
-                    childCount: 20,
-                  ),
+        backgroundColor: CupertinoColors.systemGroupedBackground,
+        child: CustomScrollView(
+          // If left unspecified, the [CustomScrollView] appends an
+          // [AlwaysScrollableScrollPhysics]. Behind the scene, the ScrollableState
+          // will attach that [AlwaysScrollableScrollPhysics] to the output of
+          // [ScrollConfiguration.of] which will be a [ClampingScrollPhysics]
+          // on Android.
+          // To demonstrate the iOS behavior in this demo and to ensure that the list
+          // always scrolls, we specifically use a [BouncingScrollPhysics] combined
+          // with a [AlwaysScrollableScrollPhysics]
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          slivers: <Widget>[
+            CupertinoSliverNavigationBar(
+              largeTitle: const Text('Refresh'),
+              // We're specifying a back label here because the previous page
+              // is a Material page. CupertinoPageRoutes could auto-populate
+              // these back labels.
+              previousPageTitle: 'Cupertino',
+              trailing: CupertinoDemoDocumentationButton(CupertinoRefreshControlDemo.routeName),
+            ),
+            CupertinoSliverRefreshControl(
+              onRefresh: () {
+                return Future<void>.delayed(const Duration(seconds: 2))
+                ..then<void>((_) {
+                    if (mounted) {
+                      setState(() => repopulateList());
+                    }
+                });
+              },
+            ),
+            SliverSafeArea(
+              top: false, // Top safe area is consumed by the navigation bar.
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (BuildContext context, int index) {
+                    return _ListItem(
+                      name: randomizedContacts[index][0],
+                      place: randomizedContacts[index][1],
+                      date: randomizedContacts[index][2],
+                      called: randomizedContacts[index][3] == 'true',
+                    );
+                  },
+                  childCount: 20,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -152,7 +158,7 @@ class _ListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: CupertinoColors.white,
+      color: CupertinoDynamicColor.resolve(CupertinoColors.systemBackground, context),
       height: 60.0,
       padding: const EdgeInsets.only(top: 9.0),
       child: Row(
@@ -160,11 +166,11 @@ class _ListItem extends StatelessWidget {
           Container(
             width: 38.0,
             child: called
-                ? const Align(
+                ? Align(
                     alignment: Alignment.topCenter,
                     child: Icon(
                       CupertinoIcons.phone_solid,
-                      color: CupertinoColors.inactiveGray,
+                      color: CupertinoColors.inactiveGray.resolveFrom(context),
                       size: 18.0,
                     ),
                   )
@@ -198,10 +204,10 @@ class _ListItem extends StatelessWidget {
                           place,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15.0,
                             letterSpacing: -0.24,
-                            color: CupertinoColors.inactiveGray,
+                            color: CupertinoColors.inactiveGray.resolveFrom(context),
                           ),
                         ),
                       ],
@@ -209,17 +215,17 @@ class _ListItem extends StatelessWidget {
                   ),
                   Text(
                     date,
-                    style: const TextStyle(
-                      color: CupertinoColors.inactiveGray,
+                    style: TextStyle(
+                      color: CupertinoColors.inactiveGray.resolveFrom(context),
                       fontSize: 15.0,
                       letterSpacing: -0.41,
                     ),
                   ),
-                  const Padding(
-                    padding: EdgeInsets.only(left: 9.0),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 9.0),
                     child: Icon(
                       CupertinoIcons.info,
-                      color: CupertinoColors.activeBlue
+                      color: CupertinoTheme.of(context).primaryColor,
                     ),
                   ),
                 ],

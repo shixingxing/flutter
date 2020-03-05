@@ -1,7 +1,9 @@
-// Copyright 2015 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -21,13 +23,64 @@ const double _kInnerRadius = 4.5;
 /// be selected. The values are of type `T`, the type parameter of the [Radio]
 /// class. Enums are commonly used for this purpose.
 ///
-/// The radio button itself does not maintain any state. Instead, when the state
-/// of the radio button changes, the widget calls the [onChanged] callback.
-/// Most widget that use a radio button will listen for the [onChanged]
-/// callback and rebuild the radio button with a new [groupValue] to update the
-/// visual appearance of the radio button.
+/// The radio button itself does not maintain any state. Instead, selecting the
+/// radio invokes the [onChanged] callback, passing [value] as a parameter. If
+/// [groupValue] and [value] match, this radio will be selected. Most widgets
+/// will respond to [onChanged] by calling [State.setState] to update the
+/// radio button's [groupValue].
+///
+/// {@tool dartpad --template=stateful_widget_scaffold_center}
+///
+/// Here is an example of Radio widgets wrapped in ListTiles, which is similar
+/// to what you could get with the RadioListTile widget.
+///
+/// The currently selected character is passed into `groupValue`, which is
+/// maintained by the example's `State`. In this case, the first `Radio`
+/// will start off selected because `_character` is initialized to
+/// `SingingCharacter.lafayette`.
+///
+/// If the second radio button is pressed, the example's state is updated
+/// with `setState`, updating `_character` to `SingingCharacter.jefferson`.
+/// This causes the buttons to rebuild with the updated `groupValue`, and
+/// therefore the selection of the second button.
 ///
 /// Requires one of its ancestors to be a [Material] widget.
+///
+/// ```dart preamble
+/// enum SingingCharacter { lafayette, jefferson }
+/// ```
+///
+/// ```dart
+/// SingingCharacter _character = SingingCharacter.lafayette;
+///
+/// Widget build(BuildContext context) {
+///   return Column(
+///     children: <Widget>[
+///       ListTile(
+///         title: const Text('Lafayette'),
+///         leading: Radio(
+///           value: SingingCharacter.lafayette,
+///           groupValue: _character,
+///           onChanged: (SingingCharacter value) {
+///             setState(() { _character = value; });
+///           },
+///         ),
+///       ),
+///       ListTile(
+///         title: const Text('Thomas Jefferson'),
+///         leading: Radio(
+///           value: SingingCharacter.jefferson,
+///           groupValue: _character,
+///           onChanged: (SingingCharacter value) {
+///             setState(() { _character = value; });
+///           },
+///         ),
+///       ),
+///     ],
+///   );
+/// }
+/// ```
+/// {@end-tool}
 ///
 /// See also:
 ///
@@ -35,7 +88,7 @@ const double _kInnerRadius = 4.5;
 ///    you can give the radio button a label.
 ///  * [Slider], for selecting a value in a range.
 ///  * [Checkbox] and [Switch], for toggling a particular value on or off.
-///  * <https://material.google.com/components/selection-controls.html#selection-controls-radio-button>
+///  * <https://material.io/design/components/selection-controls.html#radio-buttons>
 class Radio<T> extends StatefulWidget {
   /// Creates a material design radio button.
   ///
@@ -56,13 +109,19 @@ class Radio<T> extends StatefulWidget {
     @required this.groupValue,
     @required this.onChanged,
     this.activeColor,
+    this.focusColor,
+    this.hoverColor,
     this.materialTapTargetSize,
-  }) : super(key: key);
+    this.visualDensity,
+    this.focusNode,
+    this.autofocus = false,
+  }) : assert(autofocus != null),
+       super(key: key);
 
   /// The value represented by this radio button.
   final T value;
 
-  /// The currently selected value for this group of radio buttons.
+  /// The currently selected value for a group of radio buttons.
   ///
   /// This radio button is considered selected if its [value] matches the
   /// [groupValue].
@@ -75,6 +134,9 @@ class Radio<T> extends StatefulWidget {
   /// radio button with the new [groupValue].
   ///
   /// If null, the radio button will be displayed as disabled.
+  ///
+  /// The provided callback will not be invoked if this radio button is already
+  /// selected.
   ///
   /// The callback provided to [onChanged] should update the state of the parent
   /// [StatefulWidget] using the [State.setState] method, so that the parent
@@ -104,18 +166,78 @@ class Radio<T> extends StatefulWidget {
   ///
   /// See also:
   ///
-  ///   * [MaterialTapTargetSize], for a description of how this affects tap targets.
+  ///  * [MaterialTapTargetSize], for a description of how this affects tap targets.
   final MaterialTapTargetSize materialTapTargetSize;
+
+  /// Defines how compact the radio's layout will be.
+  ///
+  /// {@macro flutter.material.themedata.visualDensity}
+  ///
+  /// See also:
+  ///
+  ///  * [ThemeData.visualDensity], which specifies the [density] for all widgets
+  ///    within a [Theme].
+  final VisualDensity visualDensity;
+
+  /// The color for the radio's [Material] when it has the input focus.
+  final Color focusColor;
+
+  /// The color for the radio's [Material] when a pointer is hovering over it.
+  final Color hoverColor;
+
+  /// {@macro flutter.widgets.Focus.focusNode}
+  final FocusNode focusNode;
+
+  /// {@macro flutter.widgets.Focus.autofocus}
+  final bool autofocus;
 
   @override
   _RadioState<T> createState() => _RadioState<T>();
 }
 
 class _RadioState<T> extends State<Radio<T>> with TickerProviderStateMixin {
-  bool get _enabled => widget.onChanged != null;
+  bool get enabled => widget.onChanged != null;
+  Map<LocalKey, ActionFactory> _actionMap;
+
+  @override
+  void initState() {
+    super.initState();
+    _actionMap = <LocalKey, ActionFactory>{
+      ActivateAction.key: _createAction,
+    };
+  }
+
+  void _actionHandler(FocusNode node, Intent intent){
+    if (widget.onChanged != null) {
+      widget.onChanged(widget.value);
+    }
+    final RenderObject renderObject = node.context.findRenderObject();
+    renderObject.sendSemanticsEvent(const TapSemanticEvent());
+  }
+
+  Action _createAction() {
+    return CallbackAction(
+      ActivateAction.key,
+      onInvoke: _actionHandler,
+    );
+  }
+
+  bool _focused = false;
+  void _handleHighlightChanged(bool focused) {
+    if (_focused != focused) {
+      setState(() { _focused = focused; });
+    }
+  }
+
+  bool _hovering = false;
+  void _handleHoverChanged(bool hovering) {
+    if (_hovering != hovering) {
+      setState(() { _hovering = hovering; });
+    }
+  }
 
   Color _getInactiveColor(ThemeData themeData) {
-    return _enabled ? themeData.unselectedWidgetColor : themeData.disabledColor;
+    return enabled ? themeData.unselectedWidgetColor : themeData.disabledColor;
   }
 
   void _handleChanged(bool selected) {
@@ -136,14 +258,31 @@ class _RadioState<T> extends State<Radio<T>> with TickerProviderStateMixin {
         size = const Size(2 * kRadialReactionRadius, 2 * kRadialReactionRadius);
         break;
     }
+    size += (widget.visualDensity ?? themeData.visualDensity).baseSizeAdjustment;
     final BoxConstraints additionalConstraints = BoxConstraints.tight(size);
-    return _RadioRenderObjectWidget(
-      selected: widget.value == widget.groupValue,
-      activeColor: widget.activeColor ?? themeData.toggleableActiveColor,
-      inactiveColor: _getInactiveColor(themeData),
-      onChanged: _enabled ? _handleChanged : null,
-      additionalConstraints: additionalConstraints,
-      vsync: this,
+    return FocusableActionDetector(
+      actions: _actionMap,
+      focusNode: widget.focusNode,
+      autofocus: widget.autofocus,
+      enabled: enabled,
+      onShowFocusHighlight: _handleHighlightChanged,
+      onShowHoverHighlight: _handleHoverChanged,
+      child: Builder(
+        builder: (BuildContext context) {
+          return _RadioRenderObjectWidget(
+            selected: widget.value == widget.groupValue,
+            activeColor: widget.activeColor ?? themeData.toggleableActiveColor,
+            inactiveColor: _getInactiveColor(themeData),
+            focusColor: widget.focusColor ?? themeData.focusColor,
+            hoverColor: widget.hoverColor ?? themeData.hoverColor,
+            onChanged: enabled ? _handleChanged : null,
+            additionalConstraints: additionalConstraints,
+            vsync: this,
+            hasFocus: _focused,
+            hovering: _hovering,
+          );
+        },
+      ),
     );
   }
 }
@@ -154,9 +293,13 @@ class _RadioRenderObjectWidget extends LeafRenderObjectWidget {
     @required this.selected,
     @required this.activeColor,
     @required this.inactiveColor,
+    @required this.focusColor,
+    @required this.hoverColor,
     @required this.additionalConstraints,
     this.onChanged,
     @required this.vsync,
+    @required this.hasFocus,
+    @required this.hovering,
   }) : assert(selected != null),
        assert(activeColor != null),
        assert(inactiveColor != null),
@@ -164,8 +307,12 @@ class _RadioRenderObjectWidget extends LeafRenderObjectWidget {
        super(key: key);
 
   final bool selected;
+  final bool hasFocus;
+  final bool hovering;
   final Color inactiveColor;
   final Color activeColor;
+  final Color focusColor;
+  final Color hoverColor;
   final ValueChanged<bool> onChanged;
   final TickerProvider vsync;
   final BoxConstraints additionalConstraints;
@@ -175,9 +322,13 @@ class _RadioRenderObjectWidget extends LeafRenderObjectWidget {
     value: selected,
     activeColor: activeColor,
     inactiveColor: inactiveColor,
+    focusColor: focusColor,
+    hoverColor: hoverColor,
     onChanged: onChanged,
     vsync: vsync,
     additionalConstraints: additionalConstraints,
+    hasFocus: hasFocus,
+    hovering: hovering,
   );
 
   @override
@@ -186,9 +337,13 @@ class _RadioRenderObjectWidget extends LeafRenderObjectWidget {
       ..value = selected
       ..activeColor = activeColor
       ..inactiveColor = inactiveColor
+      ..focusColor = focusColor
+      ..hoverColor = hoverColor
       ..onChanged = onChanged
       ..additionalConstraints = additionalConstraints
-      ..vsync = vsync;
+      ..vsync = vsync
+      ..hasFocus = hasFocus
+      ..hovering = hovering;
   }
 }
 
@@ -197,24 +352,32 @@ class _RenderRadio extends RenderToggleable {
     bool value,
     Color activeColor,
     Color inactiveColor,
+    Color focusColor,
+    Color hoverColor,
     ValueChanged<bool> onChanged,
     BoxConstraints additionalConstraints,
     @required TickerProvider vsync,
-  }): super(
-    value: value,
-    tristate: false,
-    activeColor: activeColor,
-    inactiveColor: inactiveColor,
-    onChanged: onChanged,
-    additionalConstraints: additionalConstraints,
-    vsync: vsync,
-  );
+    bool hasFocus,
+    bool hovering,
+  }) : super(
+         value: value,
+         tristate: false,
+         activeColor: activeColor,
+         inactiveColor: inactiveColor,
+         focusColor: focusColor,
+         hoverColor: hoverColor,
+         onChanged: onChanged,
+         additionalConstraints: additionalConstraints,
+         vsync: vsync,
+         hasFocus: hasFocus,
+         hovering: hovering,
+       );
 
   @override
   void paint(PaintingContext context, Offset offset) {
     final Canvas canvas = context.canvas;
 
-    paintRadialReaction(canvas, offset, const Offset(kRadialReactionRadius, kRadialReactionRadius));
+    paintRadialReaction(canvas, offset, size.center(Offset.zero));
 
     final Offset center = (offset & size).center;
     final Color radioColor = onChanged != null ? activeColor : inactiveColor;

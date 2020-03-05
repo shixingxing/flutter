@@ -1,12 +1,11 @@
-// Copyright 2018 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../rendering/mock_canvas.dart';
 import 'semantics_tester.dart';
@@ -27,10 +26,10 @@ void main() {
         children: <TestSemantics>[
           TestSemantics.rootChild(
             id: 1,
-            rect: Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
+            rect: const Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
             label: 'a',
             textDirection: TextDirection.rtl,
-          )
+          ),
         ],
       ),
     ));
@@ -61,10 +60,10 @@ void main() {
         children: <TestSemantics>[
           TestSemantics.rootChild(
             id: 1,
-            rect: Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
+            rect: const Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
             label: 'a',
             textDirection: TextDirection.rtl,
-          )
+          ),
         ],
       ),
     ));
@@ -95,10 +94,10 @@ void main() {
         children: <TestSemantics>[
           TestSemantics.rootChild(
             id: 1,
-            rect: Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
+            rect: const Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
             label: 'a',
             textDirection: TextDirection.rtl,
-          )
+          ),
         ],
       ),
     ));
@@ -117,10 +116,10 @@ void main() {
         children: <TestSemantics>[
           TestSemantics.rootChild(
             id: 1,
-            rect: Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
+            rect: const Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
             label: 'a',
             textDirection: TextDirection.rtl,
-          )
+          ),
         ],
       ),
     ));
@@ -139,10 +138,10 @@ void main() {
         children: <TestSemantics>[
           TestSemantics.rootChild(
             id: 1,
-            rect: Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
+            rect: const Rect.fromLTRB(0.0, 0.0, 800.0, 600.0),
             label: 'a',
             textDirection: TextDirection.rtl,
-          )
+          ),
         ],
       ),
     ));
@@ -166,21 +165,31 @@ void main() {
                       padding: const EdgeInsets.all(5.0),
                       child: Container(
                           color: Colors.blue,
-                          height: 50
+                          height: 50,
                       ),
-                    )
+                    ),
                   );
                 }),
               ),
-            )
-          )
-        )
-      )
+            ),
+          ),
+        ),
+      ),
     );
     await expectLater(
       find.byType(RepaintBoundary).first,
-      matchesGoldenFile('opacity_test.offset.1.png'),
-      skip: !Platform.isLinux,
+      matchesGoldenFile('opacity_test.offset.png'),
     );
-  });
+  }, skip: isBrowser);
+
+  testWidgets('empty opacity does not crash', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      RepaintBoundary(child: Opacity(opacity: 0.5, child: Container())),
+    );
+    final Element element = find.byType(RepaintBoundary).first.evaluate().single;
+    // The following line will send the layer to engine and cause crash if an
+    // empty opacity layer is sent.
+    final OffsetLayer offsetLayer = element.renderObject.debugLayer as OffsetLayer;
+    await offsetLayer.toImage(const Rect.fromLTRB(0.0, 0.0, 1.0, 1.0));
+  }, skip: isBrowser);
 }

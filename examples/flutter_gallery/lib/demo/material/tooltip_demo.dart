@@ -1,4 +1,4 @@
-// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -30,20 +30,20 @@ class TooltipDemo extends StatelessWidget {
             bottom: false,
             child: ListView(
               children: <Widget>[
-                Text(_introText, style: theme.textTheme.subhead),
+                Text(_introText, style: theme.textTheme.subtitle1),
                 Row(
                   children: <Widget>[
-                    Text('Long press the ', style: theme.textTheme.subhead),
+                    Text('Long press the ', style: theme.textTheme.subtitle1),
                     Tooltip(
                       message: 'call icon',
                       child: Icon(
                         Icons.call,
                         size: 18.0,
-                        color: theme.iconTheme.color
-                      )
+                        color: theme.iconTheme.color,
+                      ),
                     ),
-                    Text(' icon.', style: theme.textTheme.subhead)
-                  ]
+                    Text(' icon.', style: theme.textTheme.subtitle1),
+                  ],
                 ),
                 Center(
                   child: IconButton(
@@ -53,23 +53,23 @@ class TooltipDemo extends StatelessWidget {
                     tooltip: 'Place a phone call',
                     onPressed: () {
                       Scaffold.of(context).showSnackBar(const SnackBar(
-                         content: Text('That was an ordinary tap.')
+                         content: Text('That was an ordinary tap.'),
                       ));
-                    }
-                  )
-                )
+                    },
+                  ),
+                ),
               ]
               .map<Widget>((Widget widget) {
                 return Padding(
                   padding: const EdgeInsets.only(top: 16.0, left: 16.0, right: 16.0),
-                  child: widget
+                  child: widget,
                 );
               })
-              .toList()
+              .toList(),
             ),
           );
         }
-      )
+      ),
     );
   }
 }

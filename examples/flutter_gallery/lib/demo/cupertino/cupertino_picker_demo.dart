@@ -1,8 +1,8 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../gallery/demo.dart';
@@ -16,6 +16,74 @@ class CupertinoPickerDemo extends StatefulWidget {
 
   @override
   _CupertinoPickerDemoState createState() => _CupertinoPickerDemoState();
+}
+
+class _BottomPicker extends StatelessWidget {
+  const _BottomPicker({
+    Key key,
+    @required this.child,
+  }) : assert(child != null),
+       super(key: key);
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: _kPickerSheetHeight,
+      padding: const EdgeInsets.only(top: 6.0),
+      color: CupertinoColors.systemBackground.resolveFrom(context),
+      child: DefaultTextStyle(
+        style: TextStyle(
+          color: CupertinoColors.label.resolveFrom(context),
+          fontSize: 22.0,
+        ),
+        child: GestureDetector(
+          // Blocks taps from propagating to the modal sheet and popping.
+          onTap: () { },
+          child: SafeArea(
+            top: false,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Menu extends StatelessWidget {
+  const _Menu({
+    Key key,
+    @required this.children,
+  }) : assert(children != null),
+       super(key: key);
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: CupertinoTheme.of(context).scaffoldBackgroundColor,
+        border: const Border(
+          top: BorderSide(color: Color(0xFFBCBBC1), width: 0.0),
+          bottom: BorderSide(color: Color(0xFFBCBBC1), width: 0.0),
+        ),
+      ),
+      height: 44.0,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: children,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
@@ -32,59 +100,6 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
   // Value that is shown in the date picker in dateAndTime mode.
   DateTime dateTime = DateTime.now();
 
-  Widget _buildMenu(List<Widget> children) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: CupertinoColors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFBCBBC1), width: 0.0),
-          bottom: BorderSide(color: Color(0xFFBCBBC1), width: 0.0),
-        ),
-      ),
-      height: 44.0,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: SafeArea(
-          top: false,
-          bottom: false,
-          child: DefaultTextStyle(
-            style: const TextStyle(
-              letterSpacing: -0.24,
-              fontSize: 17.0,
-              color: CupertinoColors.black,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: children,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomPicker(Widget picker) {
-    return Container(
-      height: _kPickerSheetHeight,
-      padding: const EdgeInsets.only(top: 6.0),
-      color: CupertinoColors.white,
-      child: DefaultTextStyle(
-        style: const TextStyle(
-          color: CupertinoColors.black,
-          fontSize: 22.0,
-        ),
-        child: GestureDetector(
-          // Blocks taps from propagating to the modal sheet and popping.
-          onTap: () {},
-          child: SafeArea(
-            top: false,
-            child: picker,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildColorPicker(BuildContext context) {
     final FixedExtentScrollController scrollController =
         FixedExtentScrollController(initialItem: _selectedColorIndex);
@@ -93,18 +108,19 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
       onTap: () async {
         await showCupertinoModalPopup<void>(
           context: context,
+          semanticsDismissible: true,
           builder: (BuildContext context) {
-            return _buildBottomPicker(
-              CupertinoPicker(
+            return _BottomPicker(
+              child: CupertinoPicker(
                 scrollController: scrollController,
                 itemExtent: _kPickerItemHeight,
-                backgroundColor: CupertinoColors.white,
+                backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
                 onSelectedItemChanged: (int index) {
                   setState(() => _selectedColorIndex = index);
                 },
                 children: List<Widget>.generate(coolColorNames.length, (int index) {
-                  return Center(child:
-                  Text(coolColorNames[index]),
+                  return Center(
+                    child: Text(coolColorNames[index]),
                   );
                 }),
               ),
@@ -112,14 +128,12 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
           },
         );
       },
-      child: _buildMenu(
-        <Widget>[
+      child: _Menu(
+        children: <Widget>[
           const Text('Favorite Color'),
           Text(
             coolColorNames[_selectedColorIndex],
-            style: const TextStyle(
-                color: CupertinoColors.inactiveGray
-            ),
+            style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.inactiveGray, context)),
           ),
         ],
       ),
@@ -131,9 +145,11 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
       onTap: () {
         showCupertinoModalPopup<void>(
           context: context,
+          semanticsDismissible: true,
           builder: (BuildContext context) {
-            return _buildBottomPicker(
-              CupertinoTimerPicker(
+            return _BottomPicker(
+              child: CupertinoTimerPicker(
+                backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
                 initialTimerDuration: timer,
                 onTimerDurationChanged: (Duration newTimer) {
                   setState(() => timer = newTimer);
@@ -143,14 +159,14 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
           },
         );
       },
-      child: _buildMenu(
-        <Widget>[
+      child: _Menu(
+        children: <Widget>[
           const Text('Countdown Timer'),
           Text(
             '${timer.inHours}:'
                 '${(timer.inMinutes % 60).toString().padLeft(2,'0')}:'
                 '${(timer.inSeconds % 60).toString().padLeft(2,'0')}',
-            style: const TextStyle(color: CupertinoColors.inactiveGray),
+            style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.inactiveGray, context)),
           ),
         ],
       ),
@@ -162,9 +178,11 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
       onTap: () {
         showCupertinoModalPopup<void>(
           context: context,
+          semanticsDismissible: true,
           builder: (BuildContext context) {
-            return _buildBottomPicker(
-              CupertinoDatePicker(
+            return _BottomPicker(
+              child: CupertinoDatePicker(
+                backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
                 mode: CupertinoDatePickerMode.date,
                 initialDateTime: date,
                 onDateTimeChanged: (DateTime newDateTime) {
@@ -175,12 +193,12 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
           },
         );
       },
-      child: _buildMenu(
-        <Widget>[
+      child: _Menu(
+        children: <Widget>[
           const Text('Date'),
           Text(
             DateFormat.yMMMMd().format(date),
-            style: const TextStyle(color: CupertinoColors.inactiveGray),
+            style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.inactiveGray, context)),
           ),
         ]
       ),
@@ -192,9 +210,11 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
       onTap: () {
         showCupertinoModalPopup<void>(
           context: context,
+          semanticsDismissible: true,
           builder: (BuildContext context) {
-            return _buildBottomPicker(
-              CupertinoDatePicker(
+            return _BottomPicker(
+              child: CupertinoDatePicker(
+                backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
                 mode: CupertinoDatePickerMode.time,
                 initialDateTime: time,
                 onDateTimeChanged: (DateTime newDateTime) {
@@ -205,12 +225,12 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
           },
         );
       },
-      child: _buildMenu(
-        <Widget>[
+      child: _Menu(
+        children: <Widget>[
           const Text('Time'),
           Text(
             DateFormat.jm().format(time),
-            style: const TextStyle(color: CupertinoColors.inactiveGray),
+            style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.inactiveGray, context)),
           ),
         ],
       ),
@@ -222,9 +242,11 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
       onTap: () {
         showCupertinoModalPopup<void>(
           context: context,
+          semanticsDismissible: true,
           builder: (BuildContext context) {
-            return _buildBottomPicker(
-              CupertinoDatePicker(
+            return _BottomPicker(
+              child: CupertinoDatePicker(
+                backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
                 mode: CupertinoDatePickerMode.dateAndTime,
                 initialDateTime: dateTime,
                 onDateTimeChanged: (DateTime newDateTime) {
@@ -235,12 +257,12 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
           },
         );
       },
-      child: _buildMenu(
-        <Widget>[
+      child: _Menu(
+        children: <Widget>[
           const Text('Date and Time'),
           Text(
             DateFormat.yMMMd().add_jm().format(dateTime),
-            style: const TextStyle(color: CupertinoColors.inactiveGray),
+            style: TextStyle(color: CupertinoDynamicColor.resolve(CupertinoColors.inactiveGray, context)),
           ),
         ],
       ),
@@ -249,29 +271,26 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cupertino Picker'),
-        actions: <Widget>[MaterialDemoDocumentationButton(CupertinoPickerDemo.routeName)],
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Picker'),
+        // We're specifying a back label here because the previous page is a
+        // Material page. CupertinoPageRoutes could auto-populate these back
+        // labels.
+        previousPageTitle: 'Cupertino',
+        trailing: CupertinoDemoDocumentationButton(CupertinoPickerDemo.routeName),
       ),
-      body: DefaultTextStyle(
-        style: const TextStyle(
-          fontFamily: '.SF UI Text',
-          fontSize: 17.0,
-          color: CupertinoColors.black,
-        ),
-        child: DecoratedBox(
-          decoration: const BoxDecoration(color: Color(0xFFEFEFF4)),
-          child: ListView(
-            children: <Widget>[
-              const Padding(padding: EdgeInsets.only(top: 32.0)),
-              _buildColorPicker(context),
-              _buildCountdownTimerPicker(context),
-              _buildDatePicker(context),
-              _buildTimePicker(context),
-              _buildDateAndTimePicker(context),
-            ],
-          ),
+      child: DefaultTextStyle(
+        style: CupertinoTheme.of(context).textTheme.textStyle,
+        child: ListView(
+          children: <Widget>[
+            const Padding(padding: EdgeInsets.only(top: 32.0)),
+            _buildColorPicker(context),
+            _buildCountdownTimerPicker(context),
+            _buildDatePicker(context),
+            _buildTimePicker(context),
+            _buildDateAndTimePicker(context),
+          ],
         ),
       ),
     );
