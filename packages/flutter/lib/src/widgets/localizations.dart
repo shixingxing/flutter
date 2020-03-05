@@ -44,7 +44,7 @@ Future<Map<Type, dynamic>> _loadAll(Locale locale, Iterable<LocalizationsDelegat
 
   // Only load the first delegate for each delegate type that supports
   // locale.languageCode.
-  final Set<Type> types = Set<Type>();
+  final Set<Type> types = <Type>{};
   final List<LocalizationsDelegate<dynamic>> delegates = <LocalizationsDelegate<dynamic>>[];
   for (LocalizationsDelegate<dynamic> delegate in allDelegates) {
     if (!types.contains(delegate.type) && delegate.isSupported(locale)) {
@@ -190,10 +190,10 @@ class _WidgetsLocalizationsDelegate extends LocalizationsDelegate<WidgetsLocaliz
 ///
 /// See also:
 ///
-/// * [GlobalWidgetsLocalizations], which provides widgets localizations for
-///   many languages.
-/// * [WidgetsApp.delegates], which automatically includes
-///   [DefaultWidgetsLocalizations.delegate] by default.
+///  * [GlobalWidgetsLocalizations], which provides widgets localizations for
+///    many languages.
+///  * [WidgetsApp.delegates], which automatically includes
+///    [DefaultWidgetsLocalizations.delegate] by default.
 class DefaultWidgetsLocalizations implements WidgetsLocalizations {
   /// Construct an object that defines the localized values for the widgets
   /// library for US English (only).
@@ -223,7 +223,7 @@ class DefaultWidgetsLocalizations implements WidgetsLocalizations {
 }
 
 class _LocalizationsScope extends InheritedWidget {
-  const _LocalizationsScope ({
+  const _LocalizationsScope({
     Key key,
     @required this.locale,
     @required this.localizationsState,
@@ -411,7 +411,7 @@ class Localizations extends StatefulWidget {
   static Locale localeOf(BuildContext context, { bool nullOk = false }) {
     assert(context != null);
     assert(nullOk != null);
-    final _LocalizationsScope scope = context.inheritFromWidgetOfExactType(_LocalizationsScope);
+    final _LocalizationsScope scope = context.dependOnInheritedWidgetOfExactType<_LocalizationsScope>();
     if (nullOk && scope == null)
       return null;
     assert(scope != null, 'a Localizations ancestor was not found');
@@ -422,7 +422,7 @@ class Localizations extends StatefulWidget {
   // Localizations.override factory constructor.
   static List<LocalizationsDelegate<dynamic>> _delegatesOf(BuildContext context) {
     assert(context != null);
-    final _LocalizationsScope scope = context.inheritFromWidgetOfExactType(_LocalizationsScope);
+    final _LocalizationsScope scope = context.dependOnInheritedWidgetOfExactType<_LocalizationsScope>();
     assert(scope != null, 'a Localizations ancestor was not found');
     return List<LocalizationsDelegate<dynamic>>.from(scope.localizationsState.widget.delegates);
   }
@@ -445,7 +445,7 @@ class Localizations extends StatefulWidget {
   static T of<T>(BuildContext context, Type type) {
     assert(context != null);
     assert(type != null);
-    final _LocalizationsScope scope = context.inheritFromWidgetOfExactType(_LocalizationsScope);
+    final _LocalizationsScope scope = context.dependOnInheritedWidgetOfExactType<_LocalizationsScope>();
     return scope?.localizationsState?.resourcesFor<T>(type);
   }
 

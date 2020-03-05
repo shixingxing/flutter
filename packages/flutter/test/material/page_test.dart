@@ -19,7 +19,7 @@ void main() {
             return const Material(child: Text('Page 2'));
           },
         },
-      )
+      ),
     );
 
     final Offset widget1TopLeft = tester.getTopLeft(find.text('Page 1'));
@@ -29,7 +29,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
 
     FadeTransition widget2Opacity =
-        tester.element(find.text('Page 2')).ancestorWidgetOfExactType(FadeTransition);
+        tester.element(find.text('Page 2')).findAncestorWidgetOfExactType<FadeTransition>();
     Offset widget2TopLeft = tester.getTopLeft(find.text('Page 2'));
     final Size widget2Size = tester.getSize(find.text('Page 2'));
 
@@ -53,7 +53,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
 
     widget2Opacity =
-        tester.element(find.text('Page 2')).ancestorWidgetOfExactType(FadeTransition);
+        tester.element(find.text('Page 2')).findAncestorWidgetOfExactType<FadeTransition>();
     widget2TopLeft = tester.getTopLeft(find.text('Page 2'));
 
     // Page 2 starts to move down.
@@ -81,7 +81,7 @@ void main() {
             );
           },
         },
-      )
+      ),
     );
 
     final Offset widget1InitialTopLeft = tester.getTopLeft(find.text('Page 1'));
@@ -94,7 +94,7 @@ void main() {
     Offset widget1TransientTopLeft = tester.getTopLeft(find.text('Page 1'));
     Offset widget2TopLeft = tester.getTopLeft(find.text('Page 2'));
     final RenderDecoratedBox box = tester.element(find.byKey(page2Key))
-        .ancestorRenderObjectOfType(const TypeMatcher<RenderDecoratedBox>());
+        .findAncestorRenderObjectOfType<RenderDecoratedBox>();
 
     // Page 1 is moving to the left.
     expect(widget1TransientTopLeft.dx < widget1InitialTopLeft.dx, true);
@@ -110,7 +110,7 @@ void main() {
     // width to the left of 0 offset box rect and nothing is drawn inside the
     // box's rect.
     expect(box, paints..rect(
-      rect: Rect.fromLTWH(-800.0, 0.0, 800.0, 600.0)
+      rect: const Rect.fromLTWH(-800.0, 0.0, 800.0, 600.0)
     ));
 
     await tester.pumpAndSettle();
@@ -151,7 +151,7 @@ void main() {
       MaterialApp(
         theme: ThemeData(platform: TargetPlatform.iOS),
         home: const Material(child: Text('Page 1')),
-      )
+      ),
     );
 
     final Offset widget1InitialTopLeft = tester.getTopLeft(find.text('Page 1'));
@@ -217,7 +217,7 @@ void main() {
             return const Scaffold(body: Text('Page 2'));
           },
         },
-      )
+      ),
     );
 
     tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('/next');
@@ -248,7 +248,7 @@ void main() {
             return const Scaffold(body: Text('Page 2'));
           },
         },
-      )
+      ),
     );
 
     tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('/next');
@@ -342,7 +342,7 @@ void main() {
     expect(helloPosition3.dy, helloPosition4.dy);
     await gesture.moveBy(const Offset(500.0, 0.0));
     await gesture.up();
-    expect(await tester.pumpAndSettle(const Duration(minutes: 1)), 2);
+    expect(await tester.pumpAndSettle(const Duration(minutes: 1)), 3);
     expect(find.text('PUSH'), findsOneWidget);
     expect(find.text('HELLO'), findsNothing);
   });
@@ -352,7 +352,7 @@ void main() {
       MaterialApp(
         theme: ThemeData(platform: TargetPlatform.iOS),
         home: const Scaffold(body: Text('Page 1')),
-      )
+      ),
     );
 
     tester.state<NavigatorState>(find.byType(Navigator)).push(MaterialPageRoute<void>(
@@ -388,7 +388,7 @@ void main() {
             return const Material(child: Text('Page 2'));
           },
         },
-      )
+      ),
     );
 
     final Offset widget1InitialTopLeft = tester.getTopLeft(find.text('Page 1'));
@@ -423,7 +423,7 @@ void main() {
             return const Material(child: Text('Page 2'));
           },
         },
-      )
+      ),
     );
 
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
@@ -468,6 +468,321 @@ void main() {
         ));
     await tester.pumpAndSettle();
     // An exception should've been thrown because the `builder` returned null.
-    expect(tester.takeException(), isInstanceOf<FlutterError>());
+    final dynamic exception = tester.takeException();
+    expect(exception, isInstanceOf<FlutterError>());
+    expect(exception.toStringDeep(), equalsIgnoringHashCodes(
+      'FlutterError\n'
+      '   The builder for route "broken" returned null.\n'
+      '   Route builders must never return null.\n'
+    ));
+  });
+
+  testWidgets('test iOS edge swipe then drop back at starting point works', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        onGenerateRoute: (RouteSettings settings) {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (BuildContext context) {
+              final String pageNumber = settings.name == '/' ? '1' : '2';
+              return Center(child: Text('Page $pageNumber'));
+            },
+          );
+        },
+      ),
+    );
+
+    tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('/next');
+
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Page 1'), findsNothing);
+    expect(find.text('Page 2'), isOnstage);
+
+    final TestGesture gesture = await tester.startGesture(const Offset(5, 200));
+    await gesture.moveBy(const Offset(300, 0));
+    await tester.pump();
+    // Bring it exactly back such that there's nothing to animate when releasing.
+    await gesture.moveBy(const Offset(-300, 0));
+    await gesture.up();
+    await tester.pump();
+
+    expect(find.text('Page 1'), findsNothing);
+    expect(find.text('Page 2'), isOnstage);
+  });
+
+  testWidgets('test iOS edge swipe then drop back at ending point works', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        onGenerateRoute: (RouteSettings settings) {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (BuildContext context) {
+              final String pageNumber = settings.name == '/' ? '1' : '2';
+              return Center(child: Text('Page $pageNumber'));
+            },
+          );
+        },
+      ),
+    );
+
+    tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('/next');
+
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('Page 1'), findsNothing);
+    expect(find.text('Page 2'), isOnstage);
+
+    final TestGesture gesture = await tester.startGesture(const Offset(5, 200));
+    // The width of the page.
+    await gesture.moveBy(const Offset(800, 0));
+    await gesture.up();
+    await tester.pump();
+
+    expect(find.text('Page 1'), isOnstage);
+    expect(find.text('Page 2'), findsNothing);
+  });
+
+  testWidgets('Back swipe dismiss interrupted by route push', (WidgetTester tester) async {
+    // Regression test for https://github.com/flutter/flutter/issues/28728
+    final GlobalKey scaffoldKey = GlobalKey();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        home: Scaffold(
+          key: scaffoldKey,
+          body: Center(
+            child: RaisedButton(
+              onPressed: () {
+                Navigator.push<void>(scaffoldKey.currentContext, MaterialPageRoute<void>(
+                  builder: (BuildContext context) {
+                    return const Scaffold(
+                      body: Center(child: Text('route')),
+                    );
+                  },
+                ));
+              },
+              child: const Text('push'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Check the basic iOS back-swipe dismiss transition. Dragging the pushed
+    // route halfway across the screen will trigger the iOS dismiss animation
+
+    await tester.tap(find.text('push'));
+    await tester.pumpAndSettle();
+    expect(find.text('route'), findsOneWidget);
+    expect(find.text('push'), findsNothing);
+
+    TestGesture gesture = await tester.startGesture(const Offset(5, 300));
+    await gesture.moveBy(const Offset(400, 0));
+    await gesture.up();
+    await tester.pump();
+    expect( // The 'route' route has been dragged to the right, halfway across the screen
+      tester.getTopLeft(find.ancestor(of: find.text('route'), matching: find.byType(Scaffold))),
+      const Offset(400, 0),
+    );
+    expect( // The 'push' route is sliding in from the left.
+      tester.getTopLeft(find.ancestor(of: find.text('push'), matching: find.byType(Scaffold))).dx,
+      lessThan(0),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('push'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.ancestor(of: find.text('push'), matching: find.byType(Scaffold))),
+      Offset.zero,
+    );
+    expect(find.text('route'), findsNothing);
+
+
+    // Run the dismiss animation 60%, which exposes the route "push" button,
+    // and then press the button. A drag dropped animation is 400ms when dropped
+    // exactly halfway. It follows a curve that is very steep initially.
+
+    await tester.tap(find.text('push'));
+    await tester.pumpAndSettle();
+    expect(find.text('route'), findsOneWidget);
+    expect(find.text('push'), findsNothing);
+
+    gesture = await tester.startGesture(const Offset(5, 300));
+    await gesture.moveBy(const Offset(400, 0)); // Drag halfway.
+    await gesture.up();
+    await tester.pump(); // Trigger the dropped snapping animation.
+    expect(
+      tester.getTopLeft(find.ancestor(of: find.text('route'), matching: find.byType(Scaffold))),
+      const Offset(400, 0),
+    );
+    // Let the dismissing snapping animation go 60%.
+    await tester.pump(const Duration(milliseconds: 240));
+    expect(
+      tester.getTopLeft(find.ancestor(of: find.text('route'), matching: find.byType(Scaffold))).dx,
+      moreOrLessEquals(798, epsilon: 1),
+    );
+
+    // Use the navigator to push a route instead of tapping the 'push' button.
+    // The topmost route (the one that's animating away), ignores input while
+    // the pop is underway because route.navigator.userGestureInProgress.
+    Navigator.push<void>(scaffoldKey.currentContext, MaterialPageRoute<void>(
+      builder: (BuildContext context) {
+        return const Scaffold(
+          body: Center(child: Text('route')),
+        );
+      },
+    ));
+
+    await tester.pumpAndSettle();
+    expect(find.text('route'), findsOneWidget);
+    expect(find.text('push'), findsNothing);
+  });
+
+  testWidgets('During back swipe the route ignores input', (WidgetTester tester) async {
+    // Regression test for https://github.com/flutter/flutter/issues/39989
+
+    final GlobalKey homeScaffoldKey = GlobalKey();
+    final GlobalKey pageScaffoldKey = GlobalKey();
+    int homeTapCount = 0;
+    int pageTapCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        home: Scaffold(
+          key: homeScaffoldKey,
+          body: GestureDetector(
+            onTap: () {
+              homeTapCount += 1;
+            }
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(homeScaffoldKey));
+    expect(homeTapCount, 1);
+    expect(pageTapCount, 0);
+
+    Navigator.push<void>(homeScaffoldKey.currentContext, MaterialPageRoute<void>(
+      builder: (BuildContext context) {
+        return Scaffold(
+          key: pageScaffoldKey,
+          appBar: AppBar(title: const Text('Page')),
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: GestureDetector(
+              onTap: () {
+                pageTapCount += 1;
+              }
+            ),
+          ),
+        );
+      },
+    ));
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(pageScaffoldKey));
+    expect(homeTapCount, 1);
+    expect(pageTapCount, 1);
+
+    // Start the basic iOS back-swipe dismiss transition. Drag the pushed
+    // "page" route halfway across the screen. The underlying "home" will
+    // start sliding in from the left.
+
+    final TestGesture gesture = await tester.startGesture(const Offset(5, 300));
+    await gesture.moveBy(const Offset(400, 0));
+    await tester.pump();
+    expect(tester.getTopLeft(find.byKey(pageScaffoldKey)), const Offset(400, 0));
+    expect(tester.getTopLeft(find.byKey(homeScaffoldKey)).dx, lessThan(0));
+
+    // Tapping on the "page" route doesn't trigger the GestureDetector because
+    // it's being dragged.
+    await tester.tap(find.byKey(pageScaffoldKey));
+    expect(homeTapCount, 1);
+    expect(pageTapCount, 1);
+
+    // Tapping the "page" route's back button doesn't do anything either.
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.byKey(pageScaffoldKey)), const Offset(400, 0));
+    expect(tester.getTopLeft(find.byKey(homeScaffoldKey)).dx, lessThan(0));
+  });
+
+  testWidgets('After a pop caused by a back-swipe, input reaches the exposed route', (WidgetTester tester) async {
+    // Regression test for https://github.com/flutter/flutter/issues/41024
+
+    final GlobalKey homeScaffoldKey = GlobalKey();
+    final GlobalKey pageScaffoldKey = GlobalKey();
+    int homeTapCount = 0;
+    int pageTapCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        home: Scaffold(
+          key: homeScaffoldKey,
+          body: GestureDetector(
+            onTap: () {
+              homeTapCount += 1;
+            }
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(homeScaffoldKey));
+    expect(homeTapCount, 1);
+    expect(pageTapCount, 0);
+
+    final ValueNotifier<bool> notifier = Navigator.of(homeScaffoldKey.currentContext).userGestureInProgressNotifier;
+    expect(notifier.value, false);
+
+    Navigator.push<void>(homeScaffoldKey.currentContext, MaterialPageRoute<void>(
+      builder: (BuildContext context) {
+        return Scaffold(
+          key: pageScaffoldKey,
+          appBar: AppBar(title: const Text('Page')),
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: GestureDetector(
+              onTap: () {
+                pageTapCount += 1;
+              }
+            ),
+          ),
+        );
+      },
+    ));
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(pageScaffoldKey));
+    expect(homeTapCount, 1);
+    expect(pageTapCount, 1);
+
+    // Trigger the basic iOS back-swipe dismiss transition. Drag the pushed
+    // "page" route more than halfway across the screen and then release it.
+
+    final TestGesture gesture = await tester.startGesture(const Offset(5, 300));
+    await gesture.moveBy(const Offset(500, 0));
+    await tester.pump();
+    expect(tester.getTopLeft(find.byKey(pageScaffoldKey)), const Offset(500, 0));
+    expect(tester.getTopLeft(find.byKey(homeScaffoldKey)).dx, lessThan(0));
+    expect(notifier.value, true);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(notifier.value, false);
+    expect(find.byKey(pageScaffoldKey), findsNothing);
+
+    // The back-swipe dismiss pop transition has finished and input on the
+    // home page still works.
+    await tester.tap(find.byKey(homeScaffoldKey));
+    expect(homeTapCount, 2);
+    expect(pageTapCount, 1);
   });
 }

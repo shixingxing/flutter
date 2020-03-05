@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import 'dart:async';
-import 'dart:convert' show utf8;
 
 import 'package:quiver/strings.dart';
 
@@ -11,6 +10,7 @@ import '../base/common.dart';
 import '../base/io.dart';
 import '../base/process.dart';
 import '../base/terminal.dart';
+import '../convert.dart' show utf8;
 import '../globals.dart';
 
 /// User message when no development certificates are found in the keychain.
@@ -46,7 +46,7 @@ It's also possible that a previously installed app with the same Bundle\u0020
 Identifier was signed with a different certificate.
 
 For more information, please visit:
-  https://flutter.io/setup/#deploy-to-ios-devices
+  https://flutter.dev/setup/#deploy-to-ios-devices
 
 Or run on an iOS simulator without code signing
 ════════════════════════════════════════════════════════════════════════════════''';
@@ -60,7 +60,7 @@ Provisioning Profile. Please ensure that a Development Team is selected by:
 $fixWithDevelopmentTeamInstruction
 
 For more information, please visit:
-  https://flutter.io/setup/#deploy-to-ios-devices
+  https://flutter.dev/setup/#deploy-to-ios-devices
 
 Or run on an iOS simulator without code signing
 ════════════════════════════════════════════════════════════════════════════════''';
@@ -79,7 +79,7 @@ const String fixWithDevelopmentTeamInstruction = '''
 
 
 final RegExp _securityFindIdentityDeveloperIdentityExtractionPattern =
-    RegExp(r'^\s*\d+\).+"(.+Developer.+)"$');
+    RegExp(r'^\s*\d+\).+"(.+Develop(ment|er).+)"$');
 final RegExp _securityFindIdentityCertificateCnExtractionPattern = RegExp(r'.*\(([a-zA-Z0-9]+)\)');
 final RegExp _certificateOrganizationalUnitExtractionPattern = RegExp(r'OU=([a-zA-Z0-9]+)');
 
@@ -94,11 +94,11 @@ final RegExp _certificateOrganizationalUnitExtractionPattern = RegExp(r'OU=([a-z
 /// project has a development team set in the project's build settings.
 Future<Map<String, String>> getCodeSigningIdentityDevelopmentTeam({
   BuildableIOSApp iosApp,
-  bool usesTerminalUi = true
-}) async{
-  final Map<String, String> buildSettings = iosApp.project.buildSettings;
-  if (buildSettings == null)
+}) async {
+  final Map<String, String> buildSettings = await iosApp.project.buildSettings;
+  if (buildSettings == null) {
     return null;
+  }
 
   // If the user already has it set in the project build settings itself,
   // continue with that.
@@ -110,17 +110,32 @@ Future<Map<String, String>> getCodeSigningIdentityDevelopmentTeam({
     return null;
   }
 
-  if (isNotEmpty(buildSettings['PROVISIONING_PROFILE']))
+  if (isNotEmpty(buildSettings['PROVISIONING_PROFILE'])) {
     return null;
+  }
 
   // If the user's environment is missing the tools needed to find and read
   // certificates, abandon. Tools should be pre-equipped on macOS.
-  if (!exitsHappy(const <String>['which', 'security']) || !exitsHappy(const <String>['which', 'openssl']))
+  if (!await processUtils.exitsHappy(const <String>['which', 'security']) ||
+      !await processUtils.exitsHappy(const <String>['which', 'openssl'])) {
     return null;
+  }
 
   const List<String> findIdentityCommand =
       <String>['security', 'find-identity', '-p', 'codesigning', '-v'];
-  final List<String> validCodeSigningIdentities = runCheckedSync(findIdentityCommand)
+
+  String findIdentityStdout;
+  try {
+    findIdentityStdout = (await processUtils.run(
+      findIdentityCommand,
+      throwOnError: true,
+    )).stdout.trim();
+  } on ProcessException catch (error) {
+    printTrace('Unexpected failure from find-identity: $error.');
+    return null;
+  }
+
+  final List<String> validCodeSigningIdentities = findIdentityStdout
       .split('\n')
       .map<String>((String outputLine) {
         return _securityFindIdentityDeveloperIdentityExtractionPattern
@@ -131,11 +146,12 @@ Future<Map<String, String>> getCodeSigningIdentityDevelopmentTeam({
       .toSet() // Unique.
       .toList();
 
-  final String signingIdentity = await _chooseSigningIdentity(validCodeSigningIdentities, usesTerminalUi);
+  final String signingIdentity = await _chooseSigningIdentity(validCodeSigningIdentities);
 
   // If none are chosen, return null.
-  if (signingIdentity == null)
+  if (signingIdentity == null) {
     return null;
+  }
 
   printStatus('Signing iOS app for device deployment using developer identity: "$signingIdentity"');
 
@@ -145,66 +161,69 @@ Future<Map<String, String>> getCodeSigningIdentityDevelopmentTeam({
           ?.group(1);
 
   // If `security`'s output format changes, we'd have to update the above regex.
-  if (signingCertificateId == null)
+  if (signingCertificateId == null) {
     return null;
+  }
 
-  final String signingCertificate = runCheckedSync(
-    <String>['security', 'find-certificate', '-c', signingCertificateId, '-p']
-  );
+  String signingCertificateStdout;
+  try {
+    signingCertificateStdout = (await processUtils.run(
+      <String>['security', 'find-certificate', '-c', signingCertificateId, '-p'],
+      throwOnError: true,
+    )).stdout.trim();
+  } on ProcessException catch (error) {
+    printTrace('Couldn\'t find the certificate: $error.');
+    return null;
+  }
 
-  final Process opensslProcess = await runCommand(const <String>['openssl', 'x509', '-subject']);
-  await (opensslProcess.stdin..write(signingCertificate)).close();
+  final Process opensslProcess = await processUtils.start(
+    const <String>['openssl', 'x509', '-subject']);
+  await (opensslProcess.stdin..write(signingCertificateStdout)).close();
 
   final String opensslOutput = await utf8.decodeStream(opensslProcess.stdout);
   // Fire and forget discard of the stderr stream so we don't hold onto resources.
   // Don't care about the result.
-  opensslProcess.stderr.drain<String>(); // ignore: unawaited_futures
+  unawaited(opensslProcess.stderr.drain<String>());
 
-  if (await opensslProcess.exitCode != 0)
+  if (await opensslProcess.exitCode != 0) {
     return null;
+  }
 
-  final Map<String, String> signingConfigs = <String, String> {
+  return <String, String>{
     'DEVELOPMENT_TEAM': _certificateOrganizationalUnitExtractionPattern
       .firstMatch(opensslOutput)
       ?.group(1),
   };
-
-  if (opensslOutput.contains('iPhone Developer: Google Development')) {
-    signingConfigs['PROVISIONING_PROFILE_SPECIFIER'] = 'Google Development';
-    signingConfigs['CODE_SIGN_STYLE'] = 'Manual';
-    printStatus("Manually selecting Google's mobile provisioning profile (see go/google-flutter-signing).");
-  }
-
-  return signingConfigs;
 }
 
-Future<String> _chooseSigningIdentity(List<String> validCodeSigningIdentities, bool usesTerminalUi) async {
+Future<String> _chooseSigningIdentity(List<String> validCodeSigningIdentities) async {
   // The user has no valid code signing identities.
   if (validCodeSigningIdentities.isEmpty) {
     printError(noCertificatesInstruction, emphasis: true);
     throwToolExit('No development certificates available to code sign app for device deployment');
   }
 
-  if (validCodeSigningIdentities.length == 1)
+  if (validCodeSigningIdentities.length == 1) {
     return validCodeSigningIdentities.first;
+  }
 
   if (validCodeSigningIdentities.length > 1) {
-    final String savedCertChoice = config.getValue('ios-signing-cert');
+    final String savedCertChoice = config.getValue('ios-signing-cert') as String;
 
     if (savedCertChoice != null) {
       if (validCodeSigningIdentities.contains(savedCertChoice)) {
         printStatus('Found saved certificate choice "$savedCertChoice". To clear, use "flutter config".');
         return savedCertChoice;
-      }
-      else {
+      } else {
         printError('Saved signing certificate "$savedCertChoice" is not a valid development certificate');
       }
     }
 
     // If terminal UI can't be used, just attempt with the first valid certificate
     // since we can't ask the user.
-    if (!usesTerminalUi)
+    if (!terminal.usesTerminalUi) {
       return validCodeSigningIdentities.first;
+    }
 
     final int count = validCodeSigningIdentities.length;
     printStatus(

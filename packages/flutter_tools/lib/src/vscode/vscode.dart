@@ -2,28 +2,39 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert';
-
 import '../base/common.dart';
 import '../base/file_system.dart';
 import '../base/platform.dart';
+import '../base/utils.dart';
 import '../base/version.dart';
+import '../convert.dart';
+import '../doctor.dart';
 
 // Include VS Code insiders (useful for debugging).
 const bool _includeInsiders = false;
+
+
+const String extensionIdentifier = 'Dart-Code.flutter';
+const String extensionMarketplaceUrl =
+  'https://marketplace.visualstudio.com/items?itemName=$extensionIdentifier';
 
 class VsCode {
   VsCode._(this.directory, this.extensionDirectory, { Version version, this.edition })
       : version = version ?? Version.unknown {
 
     if (!fs.isDirectorySync(directory)) {
-      _validationMessages.add('VS Code not found at $directory');
+      _validationMessages.add(ValidationMessage.error('VS Code not found at $directory'));
       return;
+    } else {
+      _validationMessages.add(ValidationMessage('VS Code at $directory'));
     }
 
     // If the extensions directory doesn't exist at all, the listSync()
     // below will fail, so just bail out early.
+    final ValidationMessage notInstalledMessage = ValidationMessage.error(
+          'Flutter extension not installed; install from\n$extensionMarketplaceUrl');
     if (!fs.isDirectorySync(extensionDirectory)) {
+      _validationMessages.add(notInstalledMessage);
       return;
     }
 
@@ -41,18 +52,24 @@ class VsCode {
       _isValid = true;
       _extensionVersion = Version.parse(
           extensionDir.basename.substring('$extensionIdentifier-'.length));
-      _validationMessages.add('Flutter extension version $_extensionVersion');
+      _validationMessages.add(ValidationMessage('Flutter extension version $_extensionVersion'));
+    } else {
+      _validationMessages.add(notInstalledMessage);
     }
   }
 
-  factory VsCode.fromDirectory(String installPath, String extensionDirectory,
-      { String edition }) {
+  factory VsCode.fromDirectory(
+    String installPath,
+    String extensionDirectory, {
+    String edition,
+  }) {
     final String packageJsonPath =
         fs.path.join(installPath, 'resources', 'app', 'package.json');
     final String versionString = _getVersionFromPackageJson(packageJsonPath);
     Version version;
-    if (versionString != null)
+    if (versionString != null) {
       version = Version.parse(versionString);
+    }
     return VsCode._(installPath, extensionDirectory, version: version, edition: edition);
   }
 
@@ -61,27 +78,27 @@ class VsCode {
   final Version version;
   final String edition;
 
-  static const String extensionIdentifier = 'Dart-Code.flutter';
-
   bool _isValid = false;
   Version _extensionVersion;
-  final List<String> _validationMessages = <String>[];
+  final List<ValidationMessage> _validationMessages = <ValidationMessage>[];
 
   bool get isValid => _isValid;
   String get productName => 'VS Code' + (edition != null ? ', $edition' : '');
 
-  Iterable<String> get validationMessages => _validationMessages;
+  Iterable<ValidationMessage> get validationMessages => _validationMessages;
 
   static List<VsCode> allInstalled() {
-    if (platform.isMacOS)
+    if (platform.isMacOS) {
       return _installedMacOS();
-    else if (platform.isWindows)
+    }
+    if (platform.isWindows) {
       return _installedWindows();
-    else if (platform.isLinux)
+    }
+    if (platform.isLinux) {
       return _installedLinux();
-    else
-      // VS Code isn't supported on the other platforms.
-      return <VsCode>[];
+    }
+    // VS Code isn't supported on the other platforms.
+    return <VsCode>[];
   }
 
   // macOS:
@@ -111,7 +128,7 @@ class VsCode {
         fs.path.join(homeDirPath, 'Applications', 'Visual Studio Code - Insiders.app', 'Contents'),
         '.vscode-insiders',
         isInsiders: true,
-      )
+      ),
     ]);
   }
 
@@ -179,8 +196,7 @@ class VsCode {
     ]);
   }
 
-  static List<VsCode> _findInstalled(
-      List<_VsCodeInstallLocation> allLocations) {
+  static List<VsCode> _findInstalled(List<_VsCodeInstallLocation> allLocations) {
     final Iterable<_VsCodeInstallLocation> searchLocations =
       _includeInsiders
         ? allLocations
@@ -204,11 +220,12 @@ class VsCode {
       'VS Code ($version)${_extensionVersion != Version.unknown ? ', Flutter ($_extensionVersion)' : ''}';
 
   static String _getVersionFromPackageJson(String packageJsonPath) {
-    if (!fs.isFileSync(packageJsonPath))
+    if (!fs.isFileSync(packageJsonPath)) {
       return null;
+    }
     final String jsonString = fs.file(packageJsonPath).readAsStringSync();
-    final Map<String, dynamic> jsonObject = json.decode(jsonString);
-    return jsonObject['version'];
+    final Map<String, dynamic> jsonObject = castStringKeyedMap(json.decode(jsonString));
+    return jsonObject['version'] as String;
   }
 }
 

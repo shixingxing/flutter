@@ -44,9 +44,9 @@ class EmulatorsCommand extends FlutterCommand {
     }
 
     if (argResults.wasParsed('launch')) {
-      await _launchEmulator(argResults['launch']);
+      await _launchEmulator(stringArg('launch'));
     } else if (argResults.wasParsed('create')) {
-      await _createEmulator(name: argResults['name']);
+      await _createEmulator(name: stringArg('name'));
     } else {
       final String searchText =
           argResults.rest != null && argResults.rest.isNotEmpty
@@ -83,7 +83,7 @@ class EmulatorsCommand extends FlutterCommand {
     }
   }
 
-  Future<void> _createEmulator({String name}) async {
+  Future<void> _createEmulator({ String name }) async {
     final CreateEmulatorResult createResult =
         await emulatorManager.createEmulator(name: name);
 
@@ -118,8 +118,10 @@ class EmulatorsCommand extends FlutterCommand {
     _printAdditionalInfo(showCreateInstruction: true, showRunInstruction: true);
   }
 
-  void _printAdditionalInfo({ bool showRunInstruction = false,
-      bool showCreateInstruction = false }) {
+  void _printAdditionalInfo({
+    bool showRunInstruction = false,
+    bool showCreateInstruction = false,
+  }) {
     printStatus('');
     if (showRunInstruction) {
       printStatus(
@@ -133,7 +135,7 @@ class EmulatorsCommand extends FlutterCommand {
     if (showRunInstruction || showCreateInstruction) {
       printStatus('');
     }
-    // TODO(dantup): Update this link to flutter.io if/when we have a better page.
+    // TODO(dantup): Update this link to flutter.dev if/when we have a better page.
     // That page can then link out to these places if required.
     printStatus('You can find more information on managing emulators at the links below:\n'
         '  https://developer.android.com/studio/run/managing-avds\n'

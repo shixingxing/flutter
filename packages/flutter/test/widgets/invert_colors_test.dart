@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,9 +21,8 @@ void main() {
     await expectLater(
       find.byType(RepaintBoundary),
       matchesGoldenFile('invert_colors_test.0.png'),
-      skip: !Platform.isLinux,
     );
-  });
+  }, skip: isBrowser);
 
   testWidgets('InvertColors and ColorFilter',  (WidgetTester tester) async {
     await tester.pumpWidget(const RepaintBoundary(
@@ -42,9 +39,8 @@ void main() {
     await expectLater(
       find.byType(RepaintBoundary),
       matchesGoldenFile('invert_colors_test.1.png'),
-      skip: !Platform.isLinux,
     );
-  });
+  }, skip: isBrowser);
 }
 
 // Draws a rectangle sized by the parent widget with [color], [colorFilter],
@@ -53,7 +49,7 @@ class InvertColorTestWidget extends LeafRenderObjectWidget {
   const InvertColorTestWidget({
     this.color,
     this.filter,
-    Key key
+    Key key,
   }) : super(key: key);
 
   final Color color;

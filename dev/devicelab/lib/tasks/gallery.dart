@@ -9,7 +9,6 @@ import 'dart:math' as math;
 
 import '../framework/adb.dart';
 import '../framework/framework.dart';
-import '../framework/ios.dart';
 import '../framework/utils.dart';
 
 TaskFunction createGalleryTransitionTest({ bool semanticsEnabled = false }) {
@@ -30,9 +29,6 @@ class GalleryTransitionTest {
         dir('${flutterDirectory.path}/examples/flutter_gallery');
     await inDirectory<void>(galleryDirectory, () async {
       await flutter('packages', options: <String>['get']);
-
-      if (deviceOperatingSystem == DeviceOperatingSystem.ios)
-        await prepareProvisioningCertificates(galleryDirectory.path);
 
       final String testDriver = semanticsEnabled
           ? 'transitions_perf_with_semantics.dart'
@@ -64,8 +60,8 @@ class GalleryTransitionTest {
     final Map<String, dynamic> data = <String, dynamic>{
       'transitions': transitions,
       'missed_transition_count': _countMissedTransitions(transitions),
+      ...summary,
     };
-    data.addAll(summary);
 
     return TaskResult.success(data, benchmarkScoreKeys: <String>[
       'missed_transition_count',

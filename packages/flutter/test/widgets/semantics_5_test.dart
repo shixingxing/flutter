@@ -28,8 +28,8 @@ void main() {
             label: 'label', // (force a fork)
             textDirection: TextDirection.ltr,
           ),
-        ]
-      )
+        ],
+      ),
     );
 
     expect(semantics, hasSemantics(
@@ -44,8 +44,8 @@ void main() {
             label: 'label',
             rect: TestSemantics.fullScreen,
           ),
-        ]
-      )
+        ],
+      ),
     ));
 
     semantics.dispose();

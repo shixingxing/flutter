@@ -15,10 +15,10 @@ void main() {
             onPressed: () {
               runApp(const Center(child: Text('Done', textDirection: TextDirection.ltr,)));
             },
-            child: const Text('GO')
-          )
-        )
-      )
+            child: const Text('GO'),
+          ),
+        ),
+      ),
     );
     await tester.tap(find.text('GO'));
     expect(find.text('Done'), findsOneWidget);

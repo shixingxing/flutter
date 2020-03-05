@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter/foundation.dart';
+import 'dart:ui' as ui show Color;
 
+import 'package:flutter/foundation.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 import 'box.dart';
@@ -75,7 +76,7 @@ abstract class FlowDelegate {
   /// Override to control the layout constraints given to each child.
   ///
   /// By default, the children will receive the given constraints, which are the
-  /// constrains the constraints used to size the container. The children need
+  /// constraints used to size the container. The children need
   /// not respect the given constraints, but they are required to respect the
   /// returned constraints. For example, the incoming constraints might require
   /// the container to have a width of exactly 100.0 and a height of exactly
@@ -134,8 +135,6 @@ abstract class FlowDelegate {
   String toString() => '$runtimeType';
 }
 
-int _getAlphaFromOpacity(double opacity) => (opacity * 255).round();
-
 /// Parent data for use with [RenderFlow].
 ///
 /// The [offset] property is ignored by [RenderFlow] and is always set to
@@ -181,7 +180,7 @@ class RenderFlow extends RenderBox
   /// [isRepaintBoundary].
   RenderFlow({
     List<RenderBox> children,
-    @required FlowDelegate delegate
+    @required FlowDelegate delegate,
   }) : assert(delegate != null),
        _delegate = delegate {
     addAll(children);
@@ -319,11 +318,13 @@ class RenderFlow extends RenderBox
     final FlowParentData childParentData = child.parentData;
     assert(() {
       if (childParentData._transform != null) {
-        throw FlutterError(
-          'Cannot call paintChild twice for the same child.\n'
-          'The flow delegate of type ${_delegate.runtimeType} attempted to '
-          'paint child $i multiple times, which is not permitted.'
-        );
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('Cannot call paintChild twice for the same child.'),
+          ErrorDescription(
+            'The flow delegate of type ${_delegate.runtimeType} attempted to '
+            'paint child $i multiple times, which is not permitted.'
+          )
+        ]);
       }
       return true;
     }());
@@ -341,7 +342,7 @@ class RenderFlow extends RenderBox
     if (opacity == 1.0) {
       _paintingContext.pushTransform(needsCompositing, _paintingOffset, transform, painter);
     } else {
-      _paintingContext.pushOpacity(_paintingOffset, _getAlphaFromOpacity(opacity), (PaintingContext context, Offset offset) {
+      _paintingContext.pushOpacity(_paintingOffset, ui.Color.getAlphaFromOpacity(opacity), (PaintingContext context, Offset offset) {
         context.pushTransform(needsCompositing, offset, transform, painter);
       });
     }
@@ -369,7 +370,7 @@ class RenderFlow extends RenderBox
   }
 
   @override
-  bool hitTestChildren(HitTestResult result, { Offset position }) {
+  bool hitTestChildren(BoxHitTestResult result, { Offset position }) {
     final List<RenderBox> children = getChildrenAsList();
     for (int i = _lastPaintOrder.length - 1; i >= 0; --i) {
       final int childIndex = _lastPaintOrder[i];
@@ -380,15 +381,14 @@ class RenderFlow extends RenderBox
       final Matrix4 transform = childParentData._transform;
       if (transform == null)
         continue;
-      final Matrix4 inverse = Matrix4.zero();
-      final double determinate = inverse.copyInverse(transform);
-      if (determinate == 0.0) {
-        // We cannot invert the transform. That means the child doesn't appear
-        // on screen and cannot be hit.
-        continue;
-      }
-      final Offset childPosition = MatrixUtils.transformPoint(inverse, position);
-      if (child.hitTest(result, position: childPosition))
+      final bool absorbed = result.addWithPaintTransform(
+        transform: transform,
+        position: position,
+        hitTest: (BoxHitTestResult result, Offset position) {
+          return child.hitTest(result, position: position);
+        },
+      );
+      if (absorbed)
         return true;
     }
     return false;

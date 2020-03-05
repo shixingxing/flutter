@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+@TestOn('!chrome')
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui show Image, ImageByteFormat, ColorFilter;
@@ -9,8 +10,8 @@ import 'dart:ui' as ui show Image, ImageByteFormat, ColorFilter;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:quiver/testing/async.dart';
-import '../flutter_test_alternative.dart';
 
+import '../flutter_test_alternative.dart';
 import '../painting/mocks_for_image_cache.dart';
 import '../rendering/rendering_tester.dart';
 
@@ -32,7 +33,7 @@ class SynchronousTestImageProvider extends ImageProvider<int> {
   }
 
   @override
-  ImageStreamCompleter load(int key) {
+  ImageStreamCompleter load(int key, DecoderCallback decode) {
     return OneFrameImageStreamCompleter(
       SynchronousFuture<ImageInfo>(TestImageInfo(key, image: TestImage(), scale: 1.0))
     );
@@ -46,7 +47,7 @@ class AsyncTestImageProvider extends ImageProvider<int> {
   }
 
   @override
-  ImageStreamCompleter load(int key) {
+  ImageStreamCompleter load(int key, DecoderCallback decode) {
     return OneFrameImageStreamCompleter(
       Future<ImageInfo>.value(TestImageInfo(key))
     );
@@ -62,7 +63,7 @@ class DelayedImageProvider extends ImageProvider<DelayedImageProvider> {
   }
 
   @override
-  ImageStreamCompleter load(DelayedImageProvider key) {
+  ImageStreamCompleter load(DelayedImageProvider key, DecoderCallback decode) {
     return OneFrameImageStreamCompleter(_completer.future);
   }
 
@@ -71,7 +72,7 @@ class DelayedImageProvider extends ImageProvider<DelayedImageProvider> {
   }
 
   @override
-  String toString() => '${describeIdentity(this)}}()';
+  String toString() => '${describeIdentity(this)}()';
 }
 
 class TestImage implements ui.Image {
@@ -85,7 +86,7 @@ class TestImage implements ui.Image {
   void dispose() { }
 
   @override
-  Future<ByteData> toByteData({ui.ImageByteFormat format}) async {
+  Future<ByteData> toByteData({ ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba }) async {
     throw UnsupportedError('Cannot encode test image');
   }
 }
@@ -150,7 +151,7 @@ void main() {
   // Regression test for https://github.com/flutter/flutter/issues/7289.
   // A reference test would be better.
   test('BoxDecoration backgroundImage clip', () {
-    void testDecoration({ BoxShape shape = BoxShape.rectangle, BorderRadius borderRadius, bool expectClip}) {
+    void testDecoration({ BoxShape shape = BoxShape.rectangle, BorderRadius borderRadius, bool expectClip }) {
       assert(shape != null);
       FakeAsync().run((FakeAsync async) {
         final DelayedImageProvider imageProvider = DelayedImageProvider();
@@ -210,7 +211,7 @@ void main() {
       colorFilter: colorFilter,
       fit: BoxFit.contain,
       alignment: Alignment.bottomLeft,
-      centerSlice: Rect.fromLTWH(10.0, 20.0, 30.0, 40.0),
+      centerSlice: const Rect.fromLTWH(10.0, 20.0, 30.0, 40.0),
       repeat: ImageRepeat.repeatY,
     );
 
@@ -223,12 +224,49 @@ void main() {
     expect(call.isMethod, isTrue);
     expect(call.positionalArguments, hasLength(4));
     expect(call.positionalArguments[0], isInstanceOf<TestImage>());
-    expect(call.positionalArguments[1], Rect.fromLTRB(10.0, 20.0, 40.0, 60.0));
-    expect(call.positionalArguments[2], Rect.fromLTRB(0.0, 0.0, 100.0, 100.0));
+    expect(call.positionalArguments[1], const Rect.fromLTRB(10.0, 20.0, 40.0, 60.0));
+    expect(call.positionalArguments[2], const Rect.fromLTRB(0.0, 0.0, 100.0, 100.0));
     expect(call.positionalArguments[3], isInstanceOf<Paint>());
     expect(call.positionalArguments[3].isAntiAlias, false);
     expect(call.positionalArguments[3].colorFilter, colorFilter);
     expect(call.positionalArguments[3].filterQuality, FilterQuality.low);
+  });
+
+  test(
+      'DecorationImage with null textDirection configuration should throw Error', () {
+    final DecorationImage backgroundImage = DecorationImage(
+      image: SynchronousTestImageProvider(),
+      matchTextDirection: true,
+    );
+    final BoxDecoration boxDecoration = BoxDecoration(
+        image: backgroundImage);
+    final BoxPainter boxPainter = boxDecoration.createBoxPainter(() {
+      assert(false);
+    });
+    final TestCanvas canvas = TestCanvas(<Invocation>[]);
+    FlutterError error;
+    try {
+      boxPainter.paint(canvas, Offset.zero, const ImageConfiguration(
+          size: Size(100.0, 100.0), textDirection: null));
+    } on FlutterError catch (e) {
+      error = e;
+    }
+    expect(error, isNotNull);
+    expect(error.diagnostics.length, 4);
+    expect(error.diagnostics[2], isInstanceOf<DiagnosticsProperty<DecorationImage>>());
+    expect(error.diagnostics[3], isInstanceOf<DiagnosticsProperty<ImageConfiguration>>());
+    expect(error.toStringDeep(),
+      'FlutterError\n'
+      '   ImageDecoration.matchTextDirection can only be used when a\n'
+      '   TextDirection is available.\n'
+      '   When DecorationImagePainter.paint() was called, there was no text\n'
+      '   direction provided in the ImageConfiguration object to match.\n'
+      '   The DecorationImage was:\n'
+      '     DecorationImage(SynchronousTestImageProvider(), center, match\n'
+      '     text direction)\n'
+      '   The ImageConfiguration was:\n'
+      '     ImageConfiguration(size: Size(100.0, 100.0))\n'
+    );
   });
 
   test('BoxDecoration.lerp - shapes', () {
@@ -240,7 +278,7 @@ void main() {
         const BoxDecoration(shape: BoxShape.circle),
         -1.0,
       ),
-      const BoxDecoration(shape: BoxShape.rectangle)
+      const BoxDecoration(shape: BoxShape.rectangle),
     );
     expect(
       BoxDecoration.lerp(
@@ -248,7 +286,7 @@ void main() {
         const BoxDecoration(shape: BoxShape.circle),
         0.0,
       ),
-      const BoxDecoration(shape: BoxShape.rectangle)
+      const BoxDecoration(shape: BoxShape.rectangle),
     );
     expect(
       BoxDecoration.lerp(
@@ -256,7 +294,7 @@ void main() {
         const BoxDecoration(shape: BoxShape.circle),
         0.25,
       ),
-      const BoxDecoration(shape: BoxShape.rectangle)
+      const BoxDecoration(shape: BoxShape.rectangle),
     );
     expect(
       BoxDecoration.lerp(
@@ -264,7 +302,7 @@ void main() {
         const BoxDecoration(shape: BoxShape.circle),
         0.75,
       ),
-      const BoxDecoration(shape: BoxShape.circle)
+      const BoxDecoration(shape: BoxShape.circle),
     );
     expect(
       BoxDecoration.lerp(
@@ -272,7 +310,7 @@ void main() {
         const BoxDecoration(shape: BoxShape.circle),
         1.0,
       ),
-      const BoxDecoration(shape: BoxShape.circle)
+      const BoxDecoration(shape: BoxShape.circle),
     );
     expect(
       BoxDecoration.lerp(
@@ -280,7 +318,7 @@ void main() {
         const BoxDecoration(shape: BoxShape.circle),
         2.0,
       ),
-      const BoxDecoration(shape: BoxShape.circle)
+      const BoxDecoration(shape: BoxShape.circle),
     );
   });
 
@@ -292,7 +330,7 @@ void main() {
         const BoxDecoration(gradient: gradient),
         -1.0,
       ),
-      const BoxDecoration(gradient: LinearGradient(colors: <Color>[ Color(0x00000000), Color(0x00FFFFFF) ]))
+      const BoxDecoration(gradient: LinearGradient(colors: <Color>[ Color(0x00000000), Color(0x00FFFFFF) ])),
     );
     expect(
       BoxDecoration.lerp(
@@ -300,7 +338,7 @@ void main() {
         const BoxDecoration(gradient: gradient),
         0.0,
       ),
-      const BoxDecoration()
+      const BoxDecoration(),
     );
     expect(
       BoxDecoration.lerp(
@@ -308,7 +346,7 @@ void main() {
         const BoxDecoration(gradient: gradient),
         0.25,
       ),
-      const BoxDecoration(gradient: LinearGradient(colors: <Color>[ Color(0x00000000), Color(0x40FFFFFF) ]))
+      const BoxDecoration(gradient: LinearGradient(colors: <Color>[ Color(0x00000000), Color(0x40FFFFFF) ])),
     );
     expect(
       BoxDecoration.lerp(
@@ -316,7 +354,7 @@ void main() {
         const BoxDecoration(gradient: gradient),
         0.75,
       ),
-      const BoxDecoration(gradient: LinearGradient(colors: <Color>[ Color(0x00000000), Color(0xBFFFFFFF) ]))
+      const BoxDecoration(gradient: LinearGradient(colors: <Color>[ Color(0x00000000), Color(0xBFFFFFFF) ])),
     );
     expect(
       BoxDecoration.lerp(
@@ -324,7 +362,7 @@ void main() {
         const BoxDecoration(gradient: gradient),
         1.0,
       ),
-      const BoxDecoration(gradient: gradient)
+      const BoxDecoration(gradient: gradient),
     );
     expect(
       BoxDecoration.lerp(
@@ -332,7 +370,7 @@ void main() {
         const BoxDecoration(gradient: gradient),
         2.0,
       ),
-      const BoxDecoration(gradient: gradient)
+      const BoxDecoration(gradient: gradient),
     );
   });
 
@@ -347,7 +385,7 @@ void main() {
     for (double scale = 1.0; scale <= 4.0; scale += 1.0) {
       final TestCanvas canvas = TestCanvas(<Invocation>[]);
 
-      final Rect outputRect = Rect.fromLTWH(30.0, 30.0, 250.0, 250.0);
+      const Rect outputRect = Rect.fromLTWH(30.0, 30.0, 250.0, 250.0);
       final ui.Image image = TestImage();
 
       paintImage(
@@ -391,7 +429,7 @@ void main() {
       final TestCanvas canvas = TestCanvas(<Invocation>[]);
 
       // container size > scaled image size
-      final Rect outputRect = Rect.fromLTWH(30.0, 30.0, 250.0, 250.0);
+      const Rect outputRect = Rect.fromLTWH(30.0, 30.0, 250.0, 250.0);
       final ui.Image image = TestImage();
 
       paintImage(
@@ -434,7 +472,7 @@ void main() {
     final TestCanvas canvas = TestCanvas(<Invocation>[]);
 
     // container height (20 px) < scaled image height (50 px)
-    final Rect outputRect = Rect.fromLTWH(30.0, 30.0, 250.0, 20.0);
+    const Rect outputRect = Rect.fromLTWH(30.0, 30.0, 250.0, 20.0);
     final ui.Image image = TestImage();
 
     paintImage(
@@ -483,10 +521,10 @@ void main() {
       BoxFit.scaleDown,
     ];
 
-    for(BoxFit boxFit in boxFits) {
+    for (BoxFit boxFit in boxFits) {
       final TestCanvas canvas = TestCanvas(<Invocation>[]);
 
-      final Rect outputRect = Rect.fromLTWH(30.0, 30.0, 250.0, 250.0);
+      const Rect outputRect = Rect.fromLTWH(30.0, 30.0, 250.0, 250.0);
       final ui.Image image = TestImage();
 
       paintImage(

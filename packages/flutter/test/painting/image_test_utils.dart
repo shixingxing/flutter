@@ -31,7 +31,7 @@ class TestImageProvider extends ImageProvider<TestImageProvider> {
   }
 
   @override
-  ImageStreamCompleter load(TestImageProvider key) =>
+  ImageStreamCompleter load(TestImageProvider key, DecoderCallback decode) =>
       OneFrameImageStreamCompleter(_completer.future);
 
   ImageInfo complete() {
@@ -48,4 +48,9 @@ Future<ui.Image> createTestImage() {
   final Completer<ui.Image> uiImage = Completer<ui.Image>();
   ui.decodeImageFromList(Uint8List.fromList(kTransparentImage), uiImage.complete);
   return uiImage.future;
+}
+
+class FakeImageConfiguration implements ImageConfiguration {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

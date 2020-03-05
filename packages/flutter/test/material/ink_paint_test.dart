@@ -2,13 +2,41 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../rendering/mock_canvas.dart';
 
 void main() {
+  testWidgets('The Ink widget renders a Container by default', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      Material(
+        child: Ink(),
+      ),
+    );
+    expect(tester.getSize(find.byType(Container)).height, 600.0);
+    expect(tester.getSize(find.byType(Container)).width, 800.0);
+
+    const double height = 150.0;
+    const double width = 200.0;
+    await tester.pumpWidget(
+      Material(
+        child: Center( // used to constrain to child's size
+          child: Ink(
+            height: height,
+            width: width,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.getSize(find.byType(Container)).height, height);
+    expect(tester.getSize(find.byType(Container)).width, width);
+  });
+
   testWidgets('The InkWell widget renders an ink splash', (WidgetTester tester) async {
     const Color highlightColor = Color(0xAAFF0000);
     const Color splashColor = Color(0xAA0000FF);
@@ -52,7 +80,7 @@ void main() {
         ..rrect(
           rrect: RRect.fromLTRBR(300.0, 270.0, 500.0, 330.0, const Radius.circular(6.0)),
           color: highlightColor,
-        )
+        ),
     );
 
     await gesture.up();
@@ -171,8 +199,8 @@ void main() {
     expect(
       box,
       paints
-        ..rect(rect: Rect.fromLTRB(300.0, 200.0, 500.0, 400.0), color: Color(Colors.blue.value))
-        ..circle(color: Color(Colors.green.value))
+        ..rect(rect: const Rect.fromLTRB(300.0, 200.0, 500.0, 400.0), color: Color(Colors.blue.value))
+        ..circle(color: Color(Colors.green.value)),
     );
 
     await tester.pumpWidget(
@@ -199,8 +227,8 @@ void main() {
     expect(
       box,
       paints
-        ..rect(rect: Rect.fromLTRB(300.0, 200.0, 500.0, 400.0), color: Color(Colors.red.value))
-        ..circle(color: Color(Colors.green.value))
+        ..rect(rect: const Rect.fromLTRB(300.0, 200.0, 500.0, 400.0), color: Color(Colors.red.value))
+        ..circle(color: Color(Colors.green.value)),
     );
 
     await tester.pumpWidget(
@@ -223,6 +251,140 @@ void main() {
     expect(box, isNot(paints..circle()));
 
     await gesture.up();
+  }, skip: isBrowser);
+
+  testWidgets('The InkWell widget renders an SelectAction or ActivateAction-induced ink ripple', (WidgetTester tester) async {
+    const Color highlightColor = Color(0xAAFF0000);
+    const Color splashColor = Color(0xB40000FF);
+    final BorderRadius borderRadius = BorderRadius.circular(6.0);
+
+    final FocusNode focusNode = FocusNode(debugLabel: 'Test Node');
+    Future<void> buildTest(Key actionKey) async {
+      return await tester.pumpWidget(
+        Shortcuts(
+          shortcuts: <LogicalKeySet, Intent>{
+            LogicalKeySet(LogicalKeyboardKey.space): Intent(actionKey),
+          },
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: Material(
+              child: Center(
+                child: Container(
+                  width: 100.0,
+                  height: 100.0,
+                  child: InkWell(
+                    borderRadius: borderRadius,
+                    highlightColor: highlightColor,
+                    splashColor: splashColor,
+                    focusNode: focusNode,
+                    onTap: () { },
+                    radius: 100.0,
+                    splashFactory: InkRipple.splashFactory,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await buildTest(ActivateAction.key);
+    focusNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    final Offset topLeft = tester.getTopLeft(find.byType(InkWell));
+    final Offset inkWellCenter = tester.getCenter(find.byType(InkWell)) - topLeft;
+
+    bool offsetsAreClose(Offset a, Offset b) => (a - b).distance < 1.0;
+    bool radiiAreClose(double a, double b) => (a - b).abs() < 1.0;
+
+    PaintPattern ripplePattern(double expectedRadius, int expectedAlpha) {
+      return paints
+        ..translate(x: 0.0, y: 0.0)
+        ..translate(x: topLeft.dx, y: topLeft.dy)
+        ..something((Symbol method, List<dynamic> arguments) {
+          if (method != #drawCircle) {
+            return false;
+          }
+          final Offset center = arguments[0];
+          final double radius = arguments[1];
+          final Paint paint = arguments[2];
+          if (offsetsAreClose(center, inkWellCenter) &&
+              radiiAreClose(radius, expectedRadius) &&
+              paint.color.alpha == expectedAlpha) {
+            return true;
+          }
+          throw '''
+            Expected: center == $inkWellCenter, radius == $expectedRadius, alpha == $expectedAlpha
+            Found: center == $center radius == $radius alpha == ${paint.color.alpha}''';
+        },
+        );
+    }
+
+    // Now activate it with a keypress.
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+
+    RenderBox box = Material.of(tester.element(find.byType(InkWell))) as dynamic;
+
+    if (kIsWeb) {
+      expect(box, isNot(ripplePattern(30.0, 0)));
+    } else {
+      // ripplePattern always add a translation of topLeft.
+      expect(box, ripplePattern(30.0, 0));
+
+      // The ripple fades in for 75ms. During that time its alpha is eased from
+      // 0 to the splashColor's alpha value.
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(box, ripplePattern(56.0, 120));
+
+      // At 75ms the ripple has faded in: it's alpha matches the splashColor's
+      // alpha.
+      await tester.pump(const Duration(milliseconds: 25));
+      expect(box, ripplePattern(73.0, 180));
+
+      // At this point the splash radius has expanded to its limit: 5 past the
+      // ink well's radius parameter. The fade-out is about to start.
+      // The fade-out begins at 225ms = 50ms + 25ms + 150ms.
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(box, ripplePattern(105.0, 180));
+
+      // After another 150ms the fade-out is complete.
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(box, ripplePattern(105.0, 0));
+    }
+
+    // Now try it with a select action instead.
+    await buildTest(SelectAction.key);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+
+    box = Material.of(tester.element(find.byType(InkWell))) as dynamic;
+
+    // ripplePattern always add a translation of topLeft.
+    expect(box, ripplePattern(30.0, 0));
+
+    // The ripple fades in for 75ms. During that time its alpha is eased from
+    // 0 to the splashColor's alpha value.
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(box, ripplePattern(56.0, 120));
+
+    // At 75ms the ripple has faded in: it's alpha matches the splashColor's
+    // alpha.
+    await tester.pump(const Duration(milliseconds: 25));
+    expect(box, ripplePattern(73.0, 180));
+
+    // At this point the splash radius has expanded to its limit: 5 past the
+    // ink well's radius parameter. The fade-out is about to start.
+    // The fade-out begins at 225ms = 50ms + 25ms + 150ms.
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(box, ripplePattern(105.0, 180));
+
+    // After another 150ms the fade-out is complete.
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(box, ripplePattern(105.0, 0));
   });
 
   testWidgets('Cancel an InkRipple that was disposed when its animation ended', (WidgetTester tester) async {
@@ -305,5 +467,4 @@ void main() {
       throw 'Expected: paint.color.alpha == 0, found: ${paint.color.alpha}';
     }));
   });
-
 }

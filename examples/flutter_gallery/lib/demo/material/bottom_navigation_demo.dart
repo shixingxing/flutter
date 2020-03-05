@@ -96,7 +96,7 @@ class CustomInactiveIcon extends StatelessWidget {
       height: iconTheme.size - 8.0,
       decoration: BoxDecoration(
         border: Border.all(color: iconTheme.color, width: 2.0),
-      )
+      ),
     );
   }
 }
@@ -150,7 +150,7 @@ class _BottomNavigationDemoState extends State<BottomNavigationDemo>
         title: 'Event',
         color: Colors.pink,
         vsync: this,
-      )
+      ),
     ];
 
     _navigationViews[_currentIndex].controller.value = 1.0;
@@ -164,10 +164,9 @@ class _BottomNavigationDemoState extends State<BottomNavigationDemo>
   }
 
   Widget _buildTransitionsStack() {
-    final List<FadeTransition> transitions = <FadeTransition>[];
-
-    for (NavigationIconView view in _navigationViews)
-      transitions.add(view.transition(_type, context));
+    final List<FadeTransition> transitions = <FadeTransition>[
+      for (NavigationIconView view in _navigationViews) view.transition(_type, context),
+    ];
 
     // We want to have the newly animating (fading in) views on top.
     transitions.sort((FadeTransition a, FadeTransition b) {
@@ -217,13 +216,13 @@ class _BottomNavigationDemoState extends State<BottomNavigationDemo>
               const PopupMenuItem<BottomNavigationBarType>(
                 value: BottomNavigationBarType.shifting,
                 child: Text('Shifting'),
-              )
+              ),
             ],
-          )
+          ),
         ],
       ),
       body: Center(
-        child: _buildTransitionsStack()
+        child: _buildTransitionsStack(),
       ),
       bottomNavigationBar: botNavBar,
     );

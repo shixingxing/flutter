@@ -9,14 +9,15 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'colors.dart';
+import 'interface_level.dart';
 import 'scrollbar.dart';
+import 'theme.dart';
 
 const TextStyle _kActionSheetActionStyle = TextStyle(
   fontFamily: '.SF UI Text',
   inherit: false,
   fontSize: 20.0,
   fontWeight: FontWeight.w400,
-  color: CupertinoColors.activeBlue,
   textBaseline: TextBaseline.alphabetic,
 );
 
@@ -29,31 +30,38 @@ const TextStyle _kActionSheetContentStyle = TextStyle(
   textBaseline: TextBaseline.alphabetic,
 );
 
-// This decoration is applied to the blurred backdrop to lighten the blurred
-// image. Brightening is done to counteract the dark modal barrier that
-// appears behind the alert. The overlay blend mode does the brightening.
-// The white color doesn't paint any white, it's just the basis for the
-// overlay blend mode.
-const BoxDecoration _kAlertBlurOverlayDecoration = BoxDecoration(
-  color: CupertinoColors.white,
-  backgroundBlendMode: BlendMode.overlay,
-);
-
 // Translucent, very light gray that is painted on top of the blurred backdrop
 // as the action sheet's background color.
-const Color _kBackgroundColor = Color(0xD1F8F8F8);
+// TODO(LongCatIsLooong): https://github.com/flutter/flutter/issues/39272. Use
+// System Materials once we have them.
+// Extracted from https://developer.apple.com/design/resources/.
+const Color _kBackgroundColor = CupertinoDynamicColor.withBrightness(
+  color: Color(0xC7F9F9F9),
+  darkColor: Color(0xC7252525),
+);
 
 // Translucent, light gray that is painted on top of the blurred backdrop as
 // the background color of a pressed button.
-const Color _kPressedColor = Color(0xA6E5E5EA);
+// Eye-balled from iOS 13 beta simulator.
+const Color _kPressedColor = CupertinoDynamicColor.withBrightness(
+  color: Color(0xFFE1E1E1),
+  darkColor: Color(0xFF2E2E2E),
+);
+
+const Color _kCancelPressedColor = CupertinoDynamicColor.withBrightness(
+  color: Color(0xFFECECEC),
+  darkColor: Color(0xFF49494B),
+);
+
+// The gray color used for text that appears in the title area.
+// Extracted from https://developer.apple.com/design/resources/.
+const Color _kContentTextColor = Color(0xFF8F8F8F);
 
 // Translucent gray that is painted on top of the blurred backdrop in the gap
 // areas between the content section and actions section, as well as between
 // buttons.
-const Color _kButtonDividerColor = Color(0x403F3F3F);
-
-const Color _kContentTextColor = Color(0xFF8F8F8F);
-const Color _kCancelButtonPressedColor = Color(0xFFEAEAEA);
+// Eye-balled from iOS 13 beta simulator.
+const Color _kButtonDividerColor = _kContentTextColor;
 
 const double _kBlurAmount = 20.0;
 const double _kEdgeHorizontalPadding = 8.0;
@@ -107,10 +115,10 @@ class CupertinoActionSheet extends StatelessWidget {
     this.messageScrollController,
     this.actionScrollController,
     this.cancelButton,
-  })  : assert(actions != null || title != null || message != null || cancelButton != null,
+  }) : assert(actions != null || title != null || message != null || cancelButton != null,
           'An action sheet must have a non-null value for at least one of the following arguments: '
           'actions, title, message, or cancelButton'),
-        super(key: key);
+       super(key: key);
 
   /// An optional title of the action sheet. When the [message] is non-null,
   /// the font of the [title] is bold.
@@ -148,7 +156,7 @@ class CupertinoActionSheet extends StatelessWidget {
   /// Typically this is an [CupertinoActionSheetAction] widget.
   final Widget cancelButton;
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     final List<Widget> content = <Widget>[];
     if (title != null || message != null) {
       final Widget titleSection = _CupertinoAlertContentSection(
@@ -160,7 +168,7 @@ class CupertinoActionSheet extends StatelessWidget {
     }
 
     return Container(
-      color: _kBackgroundColor,
+      color: CupertinoDynamicColor.resolve(_kBackgroundColor, context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -199,26 +207,18 @@ class CupertinoActionSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<Widget> children = <Widget>[
       Flexible(child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.0),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: _kBlurAmount, sigmaY: _kBlurAmount),
-          child: Container(
-            decoration: _kAlertBlurOverlayDecoration,
+          borderRadius: BorderRadius.circular(12.0),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: _kBlurAmount, sigmaY: _kBlurAmount),
             child: _CupertinoAlertRenderWidget(
-              contentSection: _buildContent(),
+              contentSection: Builder(builder: _buildContent),
               actionsSection: _buildActions(),
             ),
           ),
         ),
       ),
-      ),
+      if (cancelButton != null) _buildCancelButton(),
     ];
-
-    if (cancelButton != null) {
-      children.add(
-        _buildCancelButton(),
-      );
-    }
 
     final Orientation orientation = MediaQuery.of(context).orientation;
     double actionSheetWidth;
@@ -234,16 +234,19 @@ class CupertinoActionSheet extends StatelessWidget {
         scopesRoute: true,
         explicitChildNodes: true,
         label: 'Alert',
-        child: Container(
-          width: actionSheetWidth,
-          margin: const EdgeInsets.symmetric(
-            horizontal: _kEdgeHorizontalPadding,
-            vertical: _kEdgeVerticalPadding,
-          ),
-          child: Column(
-            children: children,
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: CupertinoUserInterfaceLevel(
+          data: CupertinoUserInterfaceLevelData.elevated,
+          child: Container(
+            width: actionSheetWidth,
+            margin: const EdgeInsets.symmetric(
+              horizontal: _kEdgeHorizontalPadding,
+              vertical: _kEdgeVerticalPadding,
+            ),
+            child: Column(
+              children: children,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+            ),
           ),
         ),
       ),
@@ -258,7 +261,7 @@ class CupertinoActionSheet extends StatelessWidget {
 ///  * [CupertinoActionSheet], an alert that presents the user with a set of two or
 ///    more choices related to the current context.
 class CupertinoActionSheetAction extends StatelessWidget {
-  ///Creates an action for an iOS-style action sheet.
+  /// Creates an action for an iOS-style action sheet.
   ///
   /// The [child] and [onPressed] arguments must not be null.
   const CupertinoActionSheetAction({
@@ -266,8 +269,8 @@ class CupertinoActionSheetAction extends StatelessWidget {
     this.isDefaultAction = false,
     this.isDestructiveAction = false,
     @required this.child,
-  })  : assert(child != null),
-        assert(onPressed != null);
+  }) : assert(child != null),
+       assert(onPressed != null);
 
   /// The callback that is called when the button is tapped.
   ///
@@ -291,14 +294,14 @@ class CupertinoActionSheetAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle style = _kActionSheetActionStyle;
+    TextStyle style = _kActionSheetActionStyle.copyWith(
+      color: isDestructiveAction
+        ? CupertinoDynamicColor.resolve(CupertinoColors.systemRed, context)
+        : CupertinoTheme.of(context).primaryColor,
+    );
 
     if (isDefaultAction) {
       style = style.copyWith(fontWeight: FontWeight.w600);
-    }
-
-    if (isDestructiveAction) {
-      style = style.copyWith(color: CupertinoColors.destructiveRed);
     }
 
     return GestureDetector(
@@ -341,34 +344,25 @@ class _CupertinoActionSheetCancelButton extends StatefulWidget {
 }
 
 class _CupertinoActionSheetCancelButtonState extends State<_CupertinoActionSheetCancelButton> {
-  Color _backgroundColor;
-
-  @override
-  void initState() {
-    _backgroundColor = CupertinoColors.white;
-    super.initState();
-  }
+  bool isBeingPressed = false;
 
   void _onTapDown(TapDownDetails event) {
-    setState(() {
-      _backgroundColor = _kCancelButtonPressedColor;
-    });
+    setState(() { isBeingPressed = true; });
   }
 
   void _onTapUp(TapUpDetails event) {
-    setState(() {
-      _backgroundColor = CupertinoColors.white;
-    });
+    setState(() { isBeingPressed = false; });
   }
 
   void _onTapCancel() {
-    setState(() {
-      _backgroundColor = CupertinoColors.white;
-    });
+    setState(() { isBeingPressed = false; });
   }
 
   @override
   Widget build(BuildContext context) {
+    final Color backgroundColor = isBeingPressed
+      ? _kCancelPressedColor
+      : CupertinoColors.secondarySystemGroupedBackground;
     return GestureDetector(
       excludeFromSemantics: true,
       onTapDown: _onTapDown,
@@ -376,7 +370,7 @@ class _CupertinoActionSheetCancelButtonState extends State<_CupertinoActionSheet
       onTapCancel: _onTapCancel,
       child: Container(
         decoration: BoxDecoration(
-          color: _backgroundColor,
+          color: CupertinoDynamicColor.resolve(backgroundColor, context),
           borderRadius: BorderRadius.circular(_kCornerRadius),
         ),
         child: widget.child,
@@ -399,7 +393,14 @@ class _CupertinoAlertRenderWidget extends RenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) {
     return _RenderCupertinoAlert(
       dividerThickness: _kDividerThickness / MediaQuery.of(context).devicePixelRatio,
+      dividerColor: CupertinoDynamicColor.resolve(_kButtonDividerColor, context),
     );
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderCupertinoAlert renderObject) {
+    super.updateRenderObject(context, renderObject);
+    renderObject.dividerColor = CupertinoDynamicColor.resolve(_kButtonDividerColor, context);
   }
 
   @override
@@ -514,9 +515,14 @@ class _RenderCupertinoAlert extends RenderBox {
     RenderBox contentSection,
     RenderBox actionsSection,
     double dividerThickness = 0.0,
-  }) :  _contentSection = contentSection,
-        _actionsSection = actionsSection,
-        _dividerThickness = dividerThickness;
+    @required Color dividerColor,
+  }) : assert(dividerColor != null),
+       _contentSection = contentSection,
+       _actionsSection = actionsSection,
+       _dividerThickness = dividerThickness,
+       _dividerPaint = Paint()
+        ..color = dividerColor
+        ..style = PaintingStyle.fill;
 
   RenderBox get contentSection => _contentSection;
   RenderBox _contentSection;
@@ -546,11 +552,17 @@ class _RenderCupertinoAlert extends RenderBox {
     }
   }
 
+  Color get dividerColor => _dividerPaint.color;
+  set dividerColor(Color value) {
+    if (value == _dividerPaint.color)
+      return;
+    _dividerPaint.color = value;
+    markNeedsPaint();
+  }
+
   final double _dividerThickness;
 
-  final Paint _dividerPaint = Paint()
-    ..color = _kButtonDividerColor
-    ..style = PaintingStyle.fill;
+  final Paint _dividerPaint;
 
   @override
   void attach(PipelineOwner owner) {
@@ -713,17 +725,25 @@ class _RenderCupertinoAlert extends RenderBox {
   }
 
   @override
-  bool hitTestChildren(HitTestResult result, { Offset position }) {
-    bool isHit = false;
+  bool hitTestChildren(BoxHitTestResult result, { Offset position }) {
     final MultiChildLayoutParentData contentSectionParentData = contentSection.parentData;
     final MultiChildLayoutParentData actionsSectionParentData = actionsSection.parentData;
-    if (contentSection.hitTest(result, position: position - contentSectionParentData.offset)) {
-      isHit = true;
-    } else if (actionsSection.hitTest(result,
-        position: position - actionsSectionParentData.offset)) {
-      isHit = true;
-    }
-    return isHit;
+    return result.addWithPaintOffset(
+             offset: contentSectionParentData.offset,
+             position: position,
+             hitTest: (BoxHitTestResult result, Offset transformed) {
+               assert(transformed == position - contentSectionParentData.offset);
+               return contentSection.hitTest(result, position: transformed);
+             },
+           )
+        || result.addWithPaintOffset(
+             offset: actionsSectionParentData.offset,
+             position: position,
+             hitTest: (BoxHitTestResult result, Offset transformed) {
+               assert(transformed == position - actionsSectionParentData.offset);
+               return actionsSection.hitTest(result, position: transformed);
+             },
+           );
   }
 }
 
@@ -769,6 +789,7 @@ class _CupertinoAlertContentSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Widget> titleContentGroup = <Widget>[];
+
     if (title != null) {
       titleContentGroup.add(Padding(
         padding: const EdgeInsets.only(
@@ -843,8 +864,8 @@ class _CupertinoAlertActionSection extends StatefulWidget {
     @required this.children,
     this.scrollController,
     this.hasCancelButton,
-  })  : assert(children != null),
-        super(key: key);
+  }) : assert(children != null),
+       super(key: key);
 
   final List<Widget> children;
 
@@ -975,9 +996,9 @@ class _CupertinoAlertActionsRenderWidget extends MultiChildRenderObjectWidget {
     @required List<Widget> actionButtons,
     double dividerThickness = 0.0,
     bool hasCancelButton = false,
-  }) :  _dividerThickness = dividerThickness,
-        _hasCancelButton = hasCancelButton,
-        super(key: key, children: actionButtons);
+  }) : _dividerThickness = dividerThickness,
+       _hasCancelButton = hasCancelButton,
+       super(key: key, children: actionButtons);
 
   final double _dividerThickness;
   final bool _hasCancelButton;
@@ -986,14 +1007,21 @@ class _CupertinoAlertActionsRenderWidget extends MultiChildRenderObjectWidget {
   RenderObject createRenderObject(BuildContext context) {
     return _RenderCupertinoAlertActions(
       dividerThickness: _dividerThickness,
+      dividerColor: CupertinoDynamicColor.resolve(_kButtonDividerColor, context),
       hasCancelButton: _hasCancelButton,
+      backgroundColor: CupertinoDynamicColor.resolve(_kBackgroundColor, context),
+      pressedColor: CupertinoDynamicColor.resolve(_kPressedColor, context),
     );
   }
 
   @override
   void updateRenderObject(BuildContext context, _RenderCupertinoAlertActions renderObject) {
-    renderObject.dividerThickness = _dividerThickness;
-    renderObject.hasCancelButton = _hasCancelButton;
+    renderObject
+      ..dividerThickness = _dividerThickness
+      ..dividerColor = CupertinoDynamicColor.resolve(_kButtonDividerColor, context)
+      ..hasCancelButton = _hasCancelButton
+      ..backgroundColor = CupertinoDynamicColor.resolve(_kBackgroundColor, context)
+      ..pressedColor = CupertinoDynamicColor.resolve(_kPressedColor, context);
   }
 }
 
@@ -1021,9 +1049,21 @@ class _RenderCupertinoAlertActions extends RenderBox
   _RenderCupertinoAlertActions({
     List<RenderBox> children,
     double dividerThickness = 0.0,
+    @required Color dividerColor,
     bool hasCancelButton = false,
-  }) :  _dividerThickness = dividerThickness,
-        _hasCancelButton = hasCancelButton {
+    Color backgroundColor,
+    Color pressedColor,
+  }) : _dividerThickness = dividerThickness,
+       _hasCancelButton = hasCancelButton,
+       _buttonBackgroundPaint = Paint()
+          ..style = PaintingStyle.fill
+          ..color = backgroundColor,
+       _pressedButtonBackgroundPaint = Paint()
+          ..style = PaintingStyle.fill
+          ..color = pressedColor,
+       _dividerPaint = Paint()
+          ..color = dividerColor
+          ..style = PaintingStyle.fill {
     addAll(children);
   }
 
@@ -1039,6 +1079,35 @@ class _RenderCupertinoAlertActions extends RenderBox
     markNeedsLayout();
   }
 
+  Color get backgroundColor => _buttonBackgroundPaint.color;
+  set backgroundColor(Color newValue) {
+    if (newValue == _buttonBackgroundPaint.color) {
+      return;
+    }
+
+    _buttonBackgroundPaint.color = newValue;
+    markNeedsPaint();
+  }
+
+  Color get pressedColor => _pressedButtonBackgroundPaint.color;
+  set pressedColor(Color newValue) {
+    if (newValue == _pressedButtonBackgroundPaint.color) {
+      return;
+    }
+
+    _pressedButtonBackgroundPaint.color = newValue;
+    markNeedsPaint();
+  }
+
+  Color get dividerColor => _dividerPaint.color;
+  set dividerColor(Color value) {
+    if (value == _dividerPaint.color) {
+      return;
+    }
+    _dividerPaint.color = value;
+    markNeedsPaint();
+  }
+
   bool _hasCancelButton;
   bool get hasCancelButton => _hasCancelButton;
   set hasCancelButton(bool newValue) {
@@ -1050,17 +1119,10 @@ class _RenderCupertinoAlertActions extends RenderBox
     markNeedsLayout();
   }
 
-  final Paint _buttonBackgroundPaint = Paint()
-    ..color = _kBackgroundColor
-    ..style = PaintingStyle.fill;
+  final Paint _buttonBackgroundPaint;
+  final Paint _pressedButtonBackgroundPaint;
 
-  final Paint _pressedButtonBackgroundPaint = Paint()
-    ..color = _kPressedColor
-    ..style = PaintingStyle.fill;
-
-  final Paint _dividerPaint = Paint()
-    ..color = _kButtonDividerColor
-    ..style = PaintingStyle.fill;
+  final Paint _dividerPaint;
 
   @override
   void setupParentData(RenderBox child) {
@@ -1185,7 +1247,7 @@ class _RenderCupertinoAlertActions extends RenderBox
 
     final Path backgroundFillPath = Path()
       ..fillType = PathFillType.evenOdd
-      ..addRect(Rect.largest);
+      ..addRect(Rect.fromLTWH(0.0, 0.0, size.width, size.height));
 
     final Path pressedBackgroundFillPath = Path();
 
@@ -1261,7 +1323,7 @@ class _RenderCupertinoAlertActions extends RenderBox
   }
 
   @override
-  bool hitTestChildren(HitTestResult result, { Offset position }) {
+  bool hitTestChildren(BoxHitTestResult result, { Offset position }) {
     return defaultHitTestChildren(result, position: position);
   }
 }

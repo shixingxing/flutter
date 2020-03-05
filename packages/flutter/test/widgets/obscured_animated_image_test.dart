@@ -22,10 +22,10 @@ Future<void> main() async {
     await tester.pumpWidget(
       MaterialApp(
         home: Image(image: fakeImageProvider, excludeFromSemantics: true, key: imageKey),
-        routes: <String, WidgetBuilder> {
-          '/page': (BuildContext context) => Container()
-        }
-      )
+        routes: <String, WidgetBuilder>{
+          '/page': (BuildContext context) => Container(),
+        },
+      ),
     );
     final RenderImage renderImage = tester.renderObject(find.byType(Image));
     final ui.Image image1 = renderImage.image;

@@ -4,6 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 
 const TextStyle testFont = TextStyle(
   color: Color(0xFF00FF00),
@@ -19,6 +20,7 @@ Future<void> pumpTest(WidgetTester tester, TargetPlatform platform) async {
     home: Container(
       color: const Color(0xFF111111),
       child: ListView.builder(
+        dragStartBehavior: DragStartBehavior.down,
         itemBuilder: (BuildContext context, int index) {
           return Text('$index', style: testFont);
         },
@@ -57,14 +59,16 @@ void main() {
 
   testWidgets('fling and tap to stop', (WidgetTester tester) async {
     final List<String> log = <String>[];
-
-    final List<Widget> textWidgets = <Widget>[];
-    for (int i = 0; i < 250; i += 1)
-      textWidgets.add(GestureDetector(onTap: () { log.add('tap $i'); }, child: Text('$i', style: testFont)));
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
-        child: ListView(children: textWidgets)
+        child: ListView(
+          dragStartBehavior: DragStartBehavior.down,
+          children: List<Widget>.generate(250, (int i) => GestureDetector(
+            onTap: () { log.add('tap $i'); },
+            child: Text('$i', style: testFont),
+          )),
+        ),
       ),
     );
 
@@ -81,18 +85,20 @@ void main() {
     await tester.tap(find.byType(Scrollable));
     await tester.pump(const Duration(milliseconds: 50));
     expect(log, equals(<String>['tap 21', 'tap 35']));
-  });
+  }, skip: isBrowser);
 
   testWidgets('fling and wait and tap', (WidgetTester tester) async {
     final List<String> log = <String>[];
-
-    final List<Widget> textWidgets = <Widget>[];
-    for (int i = 0; i < 250; i += 1)
-      textWidgets.add(GestureDetector(onTap: () { log.add('tap $i'); }, child: Text('$i', style: testFont)));
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
-        child: ListView(children: textWidgets)
+        child: ListView(
+          dragStartBehavior: DragStartBehavior.down,
+          children: List<Widget>.generate(250, (int i) => GestureDetector(
+            onTap: () { log.add('tap $i'); },
+            child: Text('$i', style: testFont),
+          )),
+        ),
       ),
     );
 
@@ -108,5 +114,5 @@ void main() {
     await tester.tap(find.byType(Scrollable));
     await tester.pump(const Duration(milliseconds: 50));
     expect(log, equals(<String>['tap 21', 'tap 48']));
-  });
+  }, skip: isBrowser);
 }

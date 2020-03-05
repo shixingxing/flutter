@@ -49,8 +49,8 @@ void main() {
     final RealRoot root = RealRoot(
       child = RenderPositionedBox(
         alignment: Alignment.center,
-        child: RenderSizedBox(const Size(100.0, 100.0))
-      )
+        child: RenderSizedBox(const Size(100.0, 100.0)),
+      ),
     );
     root.attach(PipelineOwner());
 

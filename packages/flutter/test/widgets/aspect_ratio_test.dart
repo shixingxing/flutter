@@ -16,10 +16,10 @@ Future<Size> _getSize(WidgetTester tester, BoxConstraints constraints, double as
           aspectRatio: aspectRatio,
           child: Container(
             key: childKey
-          )
-        )
-      )
-    )
+          ),
+        ),
+      ),
+    ),
   );
   final RenderBox box = tester.renderObject(find.byKey(childKey));
   return box.size;
@@ -42,10 +42,10 @@ void main() {
             aspectRatio: 2.0,
             child: Container(
               key: childKey
-            )
-          )
-        )
-      )
+            ),
+          ),
+        ),
+      ),
     ));
     final RenderBox box = tester.renderObject(find.byKey(childKey));
     expect(box.size, equals(const Size(1200.0, 600.0)));

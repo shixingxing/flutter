@@ -26,7 +26,8 @@
 /// increase the API surface that we have to test in Flutter tools, and the APIs
 /// in `dart:io` can sometimes be hard to use in tests.
 import 'dart:async';
-import 'dart:io' as io show exit, IOSink, ProcessSignal, stderr, stdin, stdout;
+import 'dart:io' as io show exit, IOSink, Process, ProcessInfo, ProcessSignal,
+    stderr, stdin, Stdin, StdinException, Stdout, stdout;
 
 import 'package:meta/meta.dart';
 
@@ -37,17 +38,21 @@ import 'process.dart';
 export 'dart:io'
     show
         BytesBuilder,
-        // Directory         NO! Use `file_system.dart`
+        CompressionOptions,
+        // Directory,         NO! Use `file_system.dart`
         exitCode,
-        // File              NO! Use `file_system.dart`
-        // FileSystemEntity  NO! Use `file_system.dart`
+        // File,              NO! Use `file_system.dart`
+        // FileSystemEntity,  NO! Use `file_system.dart`
         gzip,
         HandshakeException,
         HttpClient,
         HttpClientRequest,
         HttpClientResponse,
+        HttpClientResponseCompressionState,
+        HttpException,
         HttpHeaders,
         HttpRequest,
+        HttpResponse,
         HttpServer,
         HttpStatus,
         InternetAddress,
@@ -59,6 +64,7 @@ export 'dart:io'
         // Platform          NO! use `platform.dart`
         Process,
         ProcessException,
+        // ProcessInfo,      NO! use `io.dart`
         ProcessResult,
         // ProcessSignal     NO! Use [ProcessSignal] below.
         ProcessStartMode,
@@ -69,6 +75,7 @@ export 'dart:io'
         Stdin,
         StdinException,
         // stdout,           NO! Use `io.dart`
+        Stdout,
         Socket,
         SocketException,
         systemEncoding,
@@ -95,7 +102,7 @@ ExitFunction get exit => _exitFunction;
 /// Sets the [exit] function to a function that throws an exception rather
 /// than exiting the process; this is intended for testing purposes.
 @visibleForTesting
-void setExitFunctionForTests([ExitFunction exitFunction]) {
+void setExitFunctionForTests([ ExitFunction exitFunction ]) {
   _exitFunction = exitFunction ?? (int exitCode) {
     throw ProcessExit(exitCode, immediate: true);
   };
@@ -112,7 +119,12 @@ void restoreExitFunction() {
 /// Listening on signals that don't exist on the current platform is just a
 /// no-op. This is in contrast to [io.ProcessSignal], where listening to
 /// non-existent signals throws an exception.
-class ProcessSignal implements io.ProcessSignal {
+///
+/// This class does NOT implement io.ProcessSignal, because that class uses
+/// private fields. This means it cannot be used with, e.g., [Process.killPid].
+/// Alternative implementations of the relevant methods that take
+/// [ProcessSignal] instances are available on this class (e.g. "send").
+class ProcessSignal {
   @visibleForTesting
   const ProcessSignal(this._delegate);
 
@@ -125,9 +137,21 @@ class ProcessSignal implements io.ProcessSignal {
 
   final io.ProcessSignal _delegate;
 
-  @override
   Stream<ProcessSignal> watch() {
     return _delegate.watch().map<ProcessSignal>((io.ProcessSignal signal) => this);
+  }
+
+  /// Sends the signal to the given process (identified by pid).
+  ///
+  /// Returns true if the signal was delivered, false otherwise.
+  ///
+  /// On Windows, this can only be used with [ProcessSignal.SIGTERM], which
+  /// terminates the process.
+  ///
+  /// This is implemented by sending the signal using [Process.killPid].
+  bool send(int pid) {
+    assert(!platform.isWindows || this == ProcessSignal.SIGTERM);
+    return io.Process.killPid(pid, _delegate);
   }
 
   @override
@@ -143,8 +167,9 @@ class _PosixProcessSignal extends ProcessSignal {
 
   @override
   Stream<ProcessSignal> watch() {
-    if (platform.isWindows)
+    if (platform.isWindows) {
       return const Stream<ProcessSignal>.empty();
+    }
     return super.watch();
   }
 }
@@ -153,19 +178,69 @@ class Stdio {
   const Stdio();
 
   Stream<List<int>> get stdin => io.stdin;
-  io.IOSink get stdout => io.stdout;
+  io.Stdout get stdout => io.stdout;
   io.IOSink get stderr => io.stderr;
 
   bool get hasTerminal => io.stdout.hasTerminal;
+
+  static bool _stdinHasTerminal;
+
+  /// Determines whether there is a terminal attached.
+  ///
+  /// [io.Stdin.hasTerminal] only covers a subset of cases. In this check the
+  /// echoMode is toggled on and off to catch cases where the tool running in
+  /// a docker container thinks there is an attached terminal. This can cause
+  /// runtime errors such as "inappropriate ioctl for device" if not handled.
+  bool get stdinHasTerminal {
+    if (_stdinHasTerminal != null) {
+      return _stdinHasTerminal;
+    }
+    if (stdin is! io.Stdin) {
+      return _stdinHasTerminal = false;
+    }
+    final io.Stdin ioStdin = stdin as io.Stdin;
+    if (!ioStdin.hasTerminal) {
+      return _stdinHasTerminal = false;
+    }
+    try {
+      final bool currentEchoMode = ioStdin.echoMode;
+      ioStdin.echoMode = !currentEchoMode;
+      ioStdin.echoMode = currentEchoMode;
+    } on io.StdinException {
+      return _stdinHasTerminal = false;
+    }
+    return _stdinHasTerminal = true;
+  }
+
   int get terminalColumns => hasTerminal ? io.stdout.terminalColumns : null;
   int get terminalLines => hasTerminal ? io.stdout.terminalLines : null;
-  bool get supportsAnsiEscapes => hasTerminal ? io.stdout.supportsAnsiEscapes : false;
+  bool get supportsAnsiEscapes => hasTerminal && io.stdout.supportsAnsiEscapes;
 }
 
-io.IOSink get stderr => context[Stdio].stderr;
+Stdio get stdio => context.get<Stdio>() ?? const Stdio();
+io.Stdout get stdout => stdio.stdout;
+Stream<List<int>> get stdin => stdio.stdin;
+io.IOSink get stderr => stdio.stderr;
+bool get stdinHasTerminal => stdio.stdinHasTerminal;
 
-Stream<List<int>> get stdin => context[Stdio].stdin;
+/// An overridable version of io.ProcessInfo.
+abstract class ProcessInfo {
+  factory ProcessInfo() => _DefaultProcessInfo();
 
-io.IOSink get stdout => context[Stdio].stdout;
+  static ProcessInfo get instance => context.get<ProcessInfo>();
 
-Stdio get stdio => context[Stdio];
+  int get currentRss;
+
+  int get maxRss;
+}
+
+ProcessInfo get processInfo => ProcessInfo.instance;
+
+/// The default implementation of [ProcessInfo], which uses [io.ProcessInfo].
+class _DefaultProcessInfo implements ProcessInfo {
+  @override
+  int get currentRss => io.ProcessInfo.currentRss;
+
+  @override
+  int get maxRss => io.ProcessInfo.maxRss;
+}

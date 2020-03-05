@@ -31,17 +31,17 @@ void main() {
             children: <TextSpan>[
               TextSpan(
                 text: 'xxxxxxxx',
-                recognizer: tapLeft
+                recognizer: tapLeft,
               ),
               const TextSpan(text: 'yyyyyyyy'),
               TextSpan(
                 text: 'zzzzzzzzz',
-                recognizer: tapRight
+                recognizer: tapRight,
               ),
-            ]
-          )
-        )
-      )
+            ],
+          ),
+        ),
+      ),
     );
 
     final RenderBox box = tester.renderObject(find.byKey(textKey));

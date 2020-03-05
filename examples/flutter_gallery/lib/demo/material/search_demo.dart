@@ -60,7 +60,7 @@ class _SearchDemoState extends State<SearchDemo> {
                   ? Icons.more_horiz
                   : Icons.more_vert,
             ),
-            onPressed: () {},
+            onPressed: () { },
           ),
         ],
       ),
@@ -91,7 +91,7 @@ class _SearchDemoState extends State<SearchDemo> {
               ),
             ),
             const SizedBox(height: 64.0),
-            Text('Last selected integer: ${_lastIntegerSelected ?? 'NONE' }.')
+            Text('Last selected integer: ${_lastIntegerSelected ?? 'NONE' }.'),
           ],
         ),
       ),
@@ -204,22 +204,23 @@ class _SearchDemoSearchDelegate extends SearchDelegate<int> {
   @override
   List<Widget> buildActions(BuildContext context) {
     return <Widget>[
-      query.isEmpty
-          ? IconButton(
-              tooltip: 'Voice Search',
-              icon: const Icon(Icons.mic),
-              onPressed: () {
-                query = 'TODO: implement voice input';
-              },
-            )
-          : IconButton(
-              tooltip: 'Clear',
-              icon: const Icon(Icons.clear),
-              onPressed: () {
-                query = '';
-                showSuggestions(context);
-              },
-            )
+      if (query.isEmpty)
+        IconButton(
+          tooltip: 'Voice Search',
+          icon: const Icon(Icons.mic),
+          onPressed: () {
+            query = 'TODO: implement voice input';
+          },
+        )
+      else
+        IconButton(
+          tooltip: 'Clear',
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            query = '';
+            showSuggestions(context);
+          },
+        ),
     ];
   }
 }

@@ -21,14 +21,14 @@ class PrimaryScrollController extends InheritedWidget {
   const PrimaryScrollController({
     Key key,
     @required this.controller,
-    @required Widget child
+    @required Widget child,
   }) : assert(controller != null),
        super(key: key, child: child);
 
   /// Creates a subtree without an associated [ScrollController].
   const PrimaryScrollController.none({
     Key key,
-    @required Widget child
+    @required Widget child,
   }) : controller = null,
        super(key: key, child: child);
 
@@ -46,7 +46,7 @@ class PrimaryScrollController extends InheritedWidget {
   /// Returns null if there is no [ScrollController] associated with the given
   /// context.
   static ScrollController of(BuildContext context) {
-    final PrimaryScrollController result = context.inheritFromWidgetOfExactType(PrimaryScrollController);
+    final PrimaryScrollController result = context.dependOnInheritedWidgetOfExactType<PrimaryScrollController>();
     return result?.controller;
   }
 

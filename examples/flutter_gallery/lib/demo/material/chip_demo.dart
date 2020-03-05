@@ -54,20 +54,20 @@ const Map<String, String> _avatars = <String, String>{
   'customer': 'people/square/peter.png',
 };
 
-final Map<String, Set<String>> _toolActions = <String, Set<String>>{
-  'hammer': Set<String>()..addAll(<String>['flake', 'fragment', 'splinter']),
-  'chisel': Set<String>()..addAll(<String>['flake', 'nick', 'splinter']),
-  'fryer': Set<String>()..addAll(<String>['fry']),
-  'fabricator': Set<String>()..addAll(<String>['solder']),
-  'customer': Set<String>()..addAll(<String>['cash in', 'eat']),
+const Map<String, Set<String>> _toolActions = <String, Set<String>>{
+  'hammer': <String>{'flake', 'fragment', 'splinter'},
+  'chisel': <String>{'flake', 'nick', 'splinter'},
+  'fryer': <String>{'fry'},
+  'fabricator': <String>{'solder'},
+  'customer': <String>{'cash in', 'eat'},
 };
 
-final Map<String, Set<String>> _materialActions = <String, Set<String>>{
-  'poker': Set<String>()..addAll(<String>['cash in']),
-  'tortilla': Set<String>()..addAll(<String>['fry', 'eat']),
-  'fish and': Set<String>()..addAll(<String>['fry', 'eat']),
-  'micro': Set<String>()..addAll(<String>['solder', 'fragment']),
-  'wood': Set<String>()..addAll(<String>['flake', 'cut', 'splinter', 'nick']),
+const Map<String, Set<String>> _materialActions = <String, Set<String>>{
+  'poker': <String>{'cash in'},
+  'tortilla': <String>{'fry', 'eat'},
+  'fish and': <String>{'fry', 'eat'},
+  'micro': <String>{'solder', 'fragment'},
+  'wood': <String>{'flake', 'cut', 'splinter', 'nick'},
 };
 
 class _ChipsTile extends StatelessWidget {
@@ -83,41 +83,37 @@ class _ChipsTile extends StatelessWidget {
   // Wraps a list of chips into a ListTile for display as a section in the demo.
   @override
   Widget build(BuildContext context) {
-    final List<Widget> cardChildren = <Widget>[
-      Container(
-        padding: const EdgeInsets.only(top: 16.0, bottom: 4.0),
-        alignment: Alignment.center,
-        child: Text(label, textAlign: TextAlign.start),
-      ),
-    ];
-    if (children.isNotEmpty) {
-      cardChildren.add(Wrap(
-        children: children.map<Widget>((Widget chip) {
-        return Padding(
-          padding: const EdgeInsets.all(2.0),
-          child: chip,
-        );
-      }).toList()));
-    } else {
-      final TextStyle textStyle = Theme.of(context).textTheme.caption.copyWith(fontStyle: FontStyle.italic);
-      cardChildren.add(
-        Semantics(
-          container: true,
-          child: Container(
-            alignment: Alignment.center,
-            constraints: const BoxConstraints(minWidth: 48.0, minHeight: 48.0),
-            padding: const EdgeInsets.all(8.0),
-            child: Text('None', style: textStyle),
-          ),
-        ));
-    }
-
     return Card(
       semanticContainer: false,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: cardChildren,
-      )
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.only(top: 16.0, bottom: 4.0),
+            alignment: Alignment.center,
+            child: Text(label, textAlign: TextAlign.start),
+          ),
+          if (children.isNotEmpty)
+            Wrap(
+              children: children.map<Widget>((Widget chip) {
+                return Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: chip,
+                );
+              }).toList(),
+            )
+          else
+            Semantics(
+              container: true,
+              child: Container(
+                alignment: Alignment.center,
+                constraints: const BoxConstraints(minWidth: 48.0, minHeight: 48.0),
+                padding: const EdgeInsets.all(8.0),
+                child: Text('None', style: Theme.of(context).textTheme.caption.copyWith(fontStyle: FontStyle.italic)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -134,12 +130,12 @@ class _ChipDemoState extends State<ChipDemo> {
     _reset();
   }
 
-  final Set<String> _materials = Set<String>();
+  final Set<String> _materials = <String>{};
   String _selectedMaterial = '';
   String _selectedAction = '';
-  final Set<String> _tools = Set<String>();
-  final Set<String> _selectedTools = Set<String>();
-  final Set<String> _actions = Set<String>();
+  final Set<String> _tools = <String>{};
+  final Set<String> _selectedTools = <String>{};
+  final Set<String> _actions = <String>{};
   bool _showShapeBorder = false;
 
   // Initialize members with the default data.
@@ -247,7 +243,7 @@ class _ChipDemoState extends State<ChipDemo> {
       return FilterChip(
         key: ValueKey<String>(name),
         label: Text(_capitalize(name)),
-        selected: _tools.contains(name) ? _selectedTools.contains(name) : false,
+        selected: _tools.contains(name) && _selectedTools.contains(name),
         onSelected: !_tools.contains(name)
             ? null
             : (bool value) {
@@ -262,7 +258,7 @@ class _ChipDemoState extends State<ChipDemo> {
       );
     }).toList();
 
-    Set<String> allowedActions = Set<String>();
+    Set<String> allowedActions = <String>{};
     if (_selectedMaterial != null && _selectedMaterial.isNotEmpty) {
       for (String tool in _selectedTools) {
         allowedActions.addAll(_toolActions[tool]);
@@ -313,7 +309,7 @@ class _ChipDemoState extends State<ChipDemo> {
               });
             },
             icon: const Icon(Icons.vignette, semanticLabel: 'Update border shape'),
-          )
+          ),
         ],
       ),
       body: ChipTheme(
@@ -324,7 +320,7 @@ class _ChipDemoState extends State<ChipDemo> {
                 borderRadius: BorderRadius.circular(10.0),
               ))
             : theme.chipTheme,
-        child: ListView(children: tiles),
+        child: Scrollbar(child: ListView(children: tiles)),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => setState(_reset),

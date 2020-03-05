@@ -70,10 +70,10 @@ void main() {
                 flags: SemanticsFlag.hasCheckedState.index,
                 rect: TestSemantics.fullScreen,
               ),
-            ]
+            ],
           ),
         ],
-      )
+      ),
     ));
 
     //    O        O=root
@@ -122,7 +122,7 @@ void main() {
             rect: TestSemantics.fullScreen,
           ),
         ],
-      )
+      ),
     ));
 
     //             O=root
@@ -162,7 +162,7 @@ void main() {
             rect: TestSemantics.fullScreen,
           ),
         ],
-      )
+      ),
     ));
 
     semantics.dispose();

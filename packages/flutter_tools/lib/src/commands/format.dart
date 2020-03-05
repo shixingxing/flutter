@@ -28,6 +28,11 @@ class FormatCommand extends FlutterCommand {
       defaultsTo: false,
       negatable: false,
     );
+    argParser.addOption('line-length',
+      abbr: 'l',
+      help: 'Wrap lines longer than this length. Defaults to 80 characters.',
+      defaultsTo: '80',
+    );
   }
 
   @override
@@ -38,6 +43,11 @@ class FormatCommand extends FlutterCommand {
 
   @override
   final String description = 'Format one or more dart files.';
+
+  @override
+  Future<Set<DevelopmentArtifact>> get requiredArtifacts async => const <DevelopmentArtifact>{
+    DevelopmentArtifact.universal,
+  };
 
   @override
   String get invocation => '${runner.executableName} $name <one or more paths>';
@@ -56,27 +66,20 @@ class FormatCommand extends FlutterCommand {
     }
 
     final String dartfmt = sdkBinaryName('dartfmt');
-    final List<String> command = <String>[dartfmt];
+    final List<String> command = <String>[
+      dartfmt,
+      if (boolArg('dry-run')) '-n',
+      if (boolArg('machine')) '-m',
+      if (argResults['line-length'] != null) '-l ${argResults['line-length']}',
+      if (!boolArg('dry-run') && !boolArg('machine')) '-w',
+      if (boolArg('set-exit-if-changed')) '--set-exit-if-changed',
+      ...argResults.rest,
+    ];
 
-    if (argResults['dry-run']) {
-      command.add('-n');
-    }
-    if (argResults['machine']) {
-      command.add('-m');
-    }
-    if (!argResults['dry-run'] && !argResults['machine']) {
-      command.add('-w');
-    }
-
-    if (argResults['set-exit-if-changed']) {
-      command.add('--set-exit-if-changed');
-    }
-
-    command..addAll(argResults.rest);
-
-    final int result = await runCommandAndStreamOutput(command);
-    if (result != 0)
+    final int result = await processUtils.stream(command);
+    if (result != 0) {
       throwToolExit('Formatting failed: $result', exitCode: result);
+    }
 
     return null;
   }

@@ -48,10 +48,10 @@ import 'ticker_provider.dart';
 ///
 /// See also:
 ///
-///  * [Overlay].
-///  * [OverlayState].
-///  * [WidgetsApp].
-///  * [MaterialApp].
+///  * [Overlay]
+///  * [OverlayState]
+///  * [WidgetsApp]
+///  * [MaterialApp]
 class OverlayEntry {
   /// Creates an overlay entry.
   ///
@@ -86,8 +86,7 @@ class OverlayEntry {
     if (_opaque == value)
       return;
     _opaque = value;
-    assert(_overlay != null);
-    _overlay._didChangeEntryOpacity();
+    _overlay?._didChangeEntryOpacity();
   }
 
   /// Whether this entry must be included in the tree even if there is a fully
@@ -202,7 +201,7 @@ class Overlay extends StatefulWidget {
   /// created by the [WidgetsApp] or the [MaterialApp] for the application.
   const Overlay({
     Key key,
-    this.initialEntries = const <OverlayEntry>[]
+    this.initialEntries = const <OverlayEntry>[],
   }) : assert(initialEntries != null),
        super(key: key);
 
@@ -223,10 +222,10 @@ class Overlay extends StatefulWidget {
 
   /// The state from the closest instance of this class that encloses the given context.
   ///
-  /// In checked mode, if the [debugRequiredFor] argument is provided then this
+  /// In debug mode, if the `debugRequiredFor` argument is provided then this
   /// function will assert that an overlay was found and will throw an exception
   /// if not. The exception attempts to explain that the calling [Widget] (the
-  /// one given by the [debugRequiredFor] argument) needs an [Overlay] to be
+  /// one given by the `debugRequiredFor` argument) needs an [Overlay] to be
   /// present to function.
   ///
   /// Typical usage is as follows:
@@ -235,20 +234,19 @@ class Overlay extends StatefulWidget {
   /// OverlayState overlay = Overlay.of(context);
   /// ```
   static OverlayState of(BuildContext context, { Widget debugRequiredFor }) {
-    final OverlayState result = context.ancestorStateOfType(const TypeMatcher<OverlayState>());
+    final OverlayState result = context.findAncestorStateOfType<OverlayState>();
     assert(() {
       if (debugRequiredFor != null && result == null) {
-        final String additional = context.widget != debugRequiredFor
-          ? '\nThe context from which that widget was searching for an overlay was:\n  $context'
-          : '';
-        throw FlutterError(
-          'No Overlay widget found.\n'
-          '${debugRequiredFor.runtimeType} widgets require an Overlay widget ancestor for correct operation.\n'
-          'The most common way to add an Overlay to an application is to include a MaterialApp or Navigator widget in the runApp() call.\n'
-          'The specific widget that failed to find an overlay was:\n'
-          '  $debugRequiredFor'
-          '$additional'
-        );
+        final List<DiagnosticsNode> information = <DiagnosticsNode>[
+          ErrorSummary('No Overlay widget found.'),
+          ErrorDescription('${debugRequiredFor.runtimeType} widgets require an Overlay widget ancestor for correct operation.'),
+          ErrorHint('The most common way to add an Overlay to an application is to include a MaterialApp or Navigator widget in the runApp() call.'),
+          DiagnosticsProperty<Widget>('The specific widget that failed to find an overlay was', debugRequiredFor, style: DiagnosticsTreeStyle.errorProperty),
+          if (context.widget != debugRequiredFor)
+            context.describeElement('The context from which that widget was searching for an overlay was')
+        ];
+
+        throw FlutterError.fromParts(information);
       }
       return true;
     }());
@@ -272,26 +270,71 @@ class OverlayState extends State<Overlay> with TickerProviderStateMixin {
     insertAll(widget.initialEntries);
   }
 
+  int _insertionIndex(OverlayEntry below, OverlayEntry above) {
+    assert(above == null || below == null);
+    if (below != null)
+      return _entries.indexOf(below);
+    if (above != null)
+      return _entries.indexOf(above) + 1;
+    return _entries.length;
+  }
+
   /// Insert the given entry into the overlay.
   ///
-  /// If [above] is non-null, the entry is inserted just above [above].
+  /// If `below` is non-null, the entry is inserted just below `below`.
+  /// If `above` is non-null, the entry is inserted just above `above`.
   /// Otherwise, the entry is inserted on top.
-  void insert(OverlayEntry entry, { OverlayEntry above }) {
-    assert(entry._overlay == null);
-    assert(above == null || (above._overlay == this && _entries.contains(above)));
+  ///
+  /// It is an error to specify both `above` and `below`.
+  void insert(OverlayEntry entry, { OverlayEntry below, OverlayEntry above }) {
+    assert(
+      above == null || below == null,
+      'Only one of `above` and `below` may be specified.',
+    );
+    assert(
+      above == null || (above._overlay == this && _entries.contains(above)),
+      'The provided entry for `above` is not present in the Overlay.',
+    );
+    assert(
+      below == null || (below._overlay == this && _entries.contains(below)),
+      'The provided entry for `below` is not present in the Overlay.',
+    );
+    assert(!_entries.contains(entry), 'The specified entry is already present in the Overlay.');
+    assert(entry._overlay == null, 'The specified entry is already present in another Overlay.');
     entry._overlay = this;
     setState(() {
-      final int index = above == null ? _entries.length : _entries.indexOf(above) + 1;
-      _entries.insert(index, entry);
+      _entries.insert(_insertionIndex(below, above), entry);
     });
   }
 
   /// Insert all the entries in the given iterable.
   ///
-  /// If [above] is non-null, the entries are inserted just above [above].
+  /// If `below` is non-null, the entries are inserted just below `below`.
+  /// If `above` is non-null, the entries are inserted just above `above`.
   /// Otherwise, the entries are inserted on top.
-  void insertAll(Iterable<OverlayEntry> entries, { OverlayEntry above }) {
-    assert(above == null || (above._overlay == this && _entries.contains(above)));
+  ///
+  /// It is an error to specify both `above` and `below`.
+  void insertAll(Iterable<OverlayEntry> entries, { OverlayEntry below, OverlayEntry above }) {
+    assert(
+      above == null || below == null,
+      'Only one of `above` and `below` may be specified.',
+    );
+    assert(
+      above == null || (above._overlay == this && _entries.contains(above)),
+      'The provided entry for `above` is not present in the Overlay.',
+    );
+    assert(
+      below == null || (below._overlay == this && _entries.contains(below)),
+      'The provided entry for `below` is not present in the Overlay.',
+    );
+    assert(
+      entries.every((OverlayEntry entry) => !_entries.contains(entry)),
+      'One or more of the specified entries are already present in the Overlay.'
+    );
+    assert(
+      entries.every((OverlayEntry entry) => entry._overlay == null),
+      'One or more of the specified entries are already present in another Overlay.'
+    );
     if (entries.isEmpty)
       return;
     for (OverlayEntry entry in entries) {
@@ -299,15 +342,70 @@ class OverlayState extends State<Overlay> with TickerProviderStateMixin {
       entry._overlay = this;
     }
     setState(() {
-      final int index = above == null ? _entries.length : _entries.indexOf(above) + 1;
-      _entries.insertAll(index, entries);
+      _entries.insertAll(_insertionIndex(below, above), entries);
+    });
+  }
+
+  /// Remove all the entries listed in the given iterable, then reinsert them
+  /// into the overlay in the given order.
+  ///
+  /// Entries mention in `newEntries` but absent from the overlay are inserted
+  /// as if with [insertAll].
+  ///
+  /// Entries not mentioned in `newEntries` but present in the overlay are
+  /// positioned as a group in the resulting list relative to the entries that
+  /// were moved, as specified by one of `below` or `above`, which, if
+  /// specified, must be one of the entries in `newEntries`:
+  ///
+  /// If `below` is non-null, the group is positioned just below `below`.
+  /// If `above` is non-null, the group is positioned just above `above`.
+  /// Otherwise, the group is left on top, with all the rearranged entries
+  /// below.
+  ///
+  /// It is an error to specify both `above` and `below`.
+  void rearrange(Iterable<OverlayEntry> newEntries, { OverlayEntry below, OverlayEntry above }) {
+    final List<OverlayEntry> newEntriesList = newEntries is List<OverlayEntry> ? newEntries : newEntries.toList(growable: false);
+    assert(
+      above == null || below == null,
+      'Only one of `above` and `below` may be specified.',
+    );
+    assert(
+      above == null || (above._overlay == this && _entries.contains(above) && newEntriesList.contains(above)),
+      'The entry used for `above` must be in the Overlay and in the `newEntriesList`.'
+    );
+    assert(
+      below == null || (below._overlay == this && _entries.contains(below) && newEntriesList.contains(below)),
+      'The entry used for `below` must be in the Overlay and in the `newEntriesList`.'
+    );
+    assert(
+      newEntriesList.every((OverlayEntry entry) => entry._overlay == null || entry._overlay == this),
+      'One or more of the specified entries are already present in another Overlay.'
+    );
+    assert(
+      newEntriesList.every((OverlayEntry entry) => _entries.indexOf(entry) == _entries.lastIndexOf(entry)),
+      'One or more of the specified entries are specified multiple times.'
+    );
+    if (newEntriesList.isEmpty)
+      return;
+    if (listEquals(_entries, newEntriesList))
+      return;
+    final LinkedHashSet<OverlayEntry> old = LinkedHashSet<OverlayEntry>.from(_entries);
+    for (OverlayEntry entry in newEntriesList) {
+      entry._overlay ??= this;
+    }
+    setState(() {
+      _entries.clear();
+      _entries.addAll(newEntriesList);
+      old.removeAll(newEntriesList);
+      _entries.insertAll(_insertionIndex(below, above), old);
     });
   }
 
   void _remove(OverlayEntry entry) {
     if (mounted) {
-      _entries.remove(entry);
-      setState(() { /* entry was removed */ });
+      setState(() {
+        _entries.remove(entry);
+      });
     }
   }
 
@@ -316,7 +414,7 @@ class OverlayState extends State<Overlay> with TickerProviderStateMixin {
   ///
   /// This is an O(N) algorithm, and should not be necessary except for debug
   /// asserts. To avoid people depending on it, this function is implemented
-  /// only in checked mode.
+  /// only in debug mode, and always returns false in release mode.
   bool debugIsVisible(OverlayEntry entry) {
     bool result = false;
     assert(_entries.contains(entry));
@@ -382,7 +480,7 @@ class OverlayState extends State<Overlay> with TickerProviderStateMixin {
 /// [offstage] widgets which are kept alive, and are built, but are not laid out
 /// or painted.
 ///
-/// The onstage widget must be a Stack.
+/// The onstage widget must be a [Stack].
 ///
 /// For convenience, it is legal to use [Positioned] widgets around the offstage
 /// widgets.
@@ -560,10 +658,9 @@ class _RenderTheatre extends RenderBox
 
   @override
   List<DiagnosticsNode> debugDescribeChildren() {
-    final List<DiagnosticsNode> children = <DiagnosticsNode>[];
-
-    if (child != null)
-      children.add(child.toDiagnosticsNode(name: 'onstage'));
+    final List<DiagnosticsNode> children = <DiagnosticsNode>[
+      if (child != null) child.toDiagnosticsNode(name: 'onstage'),
+    ];
 
     if (firstChild != null) {
       RenderBox child = firstChild;
@@ -591,7 +688,7 @@ class _RenderTheatre extends RenderBox
       );
     }
     return children;
-   }
+  }
 
   @override
   void visitChildrenForSemantics(RenderObjectVisitor visitor) {

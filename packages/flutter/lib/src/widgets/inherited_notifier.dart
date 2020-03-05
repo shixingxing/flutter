@@ -9,7 +9,7 @@ import 'framework.dart';
 /// An inherited widget for a [Listenable] [notifier], which updates its
 /// dependencies when the [notifier] is triggered.
 ///
-/// This is a variant of [InheritedWidget], specialised for subclasses of
+/// This is a variant of [InheritedWidget], specialized for subclasses of
 /// [Listenable], such as [ChangeNotifier] or [ValueNotifier].
 ///
 /// Dependents are notified whenever the [notifier] sends notifications, or
@@ -19,7 +19,7 @@ import 'framework.dart';
 /// even if the [notifier] fires multiple times between two frames.
 ///
 /// Typically this class is subclassed with a class that provides an `of` static
-/// method that calls [BuildContext.inheritFromWidgetOfExactType] with that
+/// method that calls [BuildContext.dependOnInheritedWidgetOfExactType] with that
 /// class.
 ///
 /// The [updateShouldNotify] method may also be overridden, to change the logic

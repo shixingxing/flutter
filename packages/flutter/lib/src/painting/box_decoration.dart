@@ -10,6 +10,7 @@ import 'basic_types.dart';
 import 'border_radius.dart';
 import 'box_border.dart';
 import 'box_shadow.dart';
+import 'colors.dart';
 import 'decoration.dart';
 import 'decoration_image.dart';
 import 'edge_insets.dart';
@@ -34,25 +35,35 @@ import 'image_provider.dart';
 ///
 /// {@tool sample}
 ///
-/// The following example uses the [Container] widget from the widgets layer to
-/// draw an image with a border:
+/// The following applies a [BoxDecoration] to a [Container] widget to draw an
+/// [image] of an owl with a thick black [border] and rounded corners.
+///
+/// ![](https://flutter.github.io/assets-for-api-docs/assets/painting/box_decoration.png)
 ///
 /// ```dart
 /// Container(
 ///   decoration: BoxDecoration(
 ///     color: const Color(0xff7c94b6),
-///     image: DecorationImage(
-///       image: ExactAssetImage('images/flowers.jpeg'),
+///     image: const DecorationImage(
+///       image: NetworkImage('https:///flutter.github.io/assets-for-api-docs/assets/widgets/owl-2.jpg'),
 ///       fit: BoxFit.cover,
 ///     ),
 ///     border: Border.all(
 ///       color: Colors.black,
-///       width: 8.0,
+///       width: 8,
 ///     ),
+///     borderRadius: BorderRadius.circular(12),
 ///   ),
 /// )
 /// ```
 /// {@end-tool}
+///
+/// {@template flutter.painting.boxDecoration.clip}
+/// The [shape] or the [borderRadius] won't clip the children of the
+/// decorated [Container]. If the clip is required, insert a clip widget
+/// (e.g., [ClipRect], [ClipRRect], [ClipPath]) as the child of the [Container].
+/// Be aware that clipping may be costly in terms of performance.
+/// {@endtemplate}
 ///
 /// See also:
 ///
@@ -89,6 +100,30 @@ class BoxDecoration extends Decoration {
          'backgroundBlendMode applies to BoxDecoration\'s background color or '
          'gradient, but no color or gradient was provided.'
        );
+
+  /// Creates a copy of this object but with the given fields replaced with the
+  /// new values.
+  BoxDecoration copyWith({
+    Color color,
+    DecorationImage image,
+    BoxBorder border,
+    BorderRadiusGeometry borderRadius,
+    List<BoxShadow> boxShadow,
+    Gradient gradient,
+    BlendMode backgroundBlendMode,
+    BoxShape shape,
+  }) {
+    return BoxDecoration(
+      color: color ?? this.color,
+      image: image ?? this.image,
+      border: border ?? this.border,
+      borderRadius: borderRadius ?? this.borderRadius,
+      boxShadow: boxShadow ?? this.boxShadow,
+      gradient: gradient ?? this.gradient,
+      backgroundBlendMode: backgroundBlendMode ?? this.backgroundBlendMode,
+      shape: shape ?? this.shape,
+    );
+  }
 
   @override
   bool debugAssertIsValid() {
@@ -130,11 +165,19 @@ class BoxDecoration extends Decoration {
   ///
   /// Applies only to boxes with rectangular shapes; ignored if [shape] is not
   /// [BoxShape.rectangle].
+  ///
+  /// {@macro flutter.painting.boxDecoration.clip}
   final BorderRadiusGeometry borderRadius;
 
   /// A list of shadows cast by this box behind the box.
   ///
   /// The shadow follows the [shape] of the box.
+  ///
+  /// See also:
+  ///
+  ///  * [kElevationToShadow], for some predefined shadows used in Material
+  ///    Design.
+  ///  * [PhysicalModel], a widget for showing shadows.
   final List<BoxShadow> boxShadow;
 
   /// A gradient to use when filling the box.
@@ -163,6 +206,8 @@ class BoxDecoration extends Decoration {
   /// different [ShapeBorder]s; in particular, [CircleBorder] instead of
   /// [BoxShape.circle] and [RoundedRectangleBorder] instead of
   /// [BoxShape.rectangle].
+  ///
+  /// {@macro flutter.painting.boxDecoration.clip}
   final BoxShape shape;
 
   @override
@@ -284,7 +329,7 @@ class BoxDecoration extends Decoration {
       ..defaultDiagnosticsTreeStyle = DiagnosticsTreeStyle.whitespace
       ..emptyBodyDescription = '<no decorations specified>';
 
-    properties.add(DiagnosticsProperty<Color>('color', color, defaultValue: null));
+    properties.add(ColorProperty('color', color, defaultValue: null));
     properties.add(DiagnosticsProperty<DecorationImage>('image', image, defaultValue: null));
     properties.add(DiagnosticsProperty<BoxBorder>('border', border, defaultValue: null));
     properties.add(DiagnosticsProperty<BorderRadiusGeometry>('borderRadius', borderRadius, defaultValue: null));
@@ -315,7 +360,7 @@ class BoxDecoration extends Decoration {
   }
 
   @override
-  _BoxDecorationPainter createBoxPainter([VoidCallback onChanged]) {
+  _BoxDecorationPainter createBoxPainter([ VoidCallback onChanged ]) {
     assert(onChanged != null || image == null);
     return _BoxDecorationPainter(this, onChanged);
   }

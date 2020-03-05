@@ -2,12 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert';
-
 import 'package:archive/archive.dart';
 
 import '../base/file_system.dart';
 import '../base/version.dart';
+import '../convert.dart';
 import '../doctor.dart';
 
 class IntelliJPlugins {
@@ -18,8 +17,11 @@ class IntelliJPlugins {
   static final Version kMinFlutterPluginVersion = Version(16, 0, 0);
 
   void validatePackage(
-      List<ValidationMessage> messages, List<String> packageNames, String title,
-      {Version minVersion}) {
+    List<ValidationMessage> messages,
+    List<String> packageNames,
+    String title, {
+    Version minVersion,
+  }) {
     for (String packageName in packageNames) {
       if (!_hasPackage(packageName)) {
         continue;
@@ -44,8 +46,9 @@ class IntelliJPlugins {
 
   bool _hasPackage(String packageName) {
     final String packagePath = fs.path.join(pluginsPath, packageName);
-    if (packageName.endsWith('.jar'))
+    if (packageName.endsWith('.jar')) {
       return fs.isFileSync(packagePath);
+    }
     return fs.isDirectorySync(packagePath);
   }
 
@@ -59,7 +62,7 @@ class IntelliJPlugins {
       final Archive archive =
           ZipDecoder().decodeBytes(fs.file(jarPath).readAsBytesSync());
       final ArchiveFile file = archive.findFile('META-INF/plugin.xml');
-      final String content = utf8.decode(file.content);
+      final String content = utf8.decode(file.content as List<int>);
       const String versionStartTag = '<version>';
       final int start = content.indexOf(versionStartTag);
       final int end = content.indexOf('</version>', start);

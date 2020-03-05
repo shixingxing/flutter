@@ -6,6 +6,9 @@ import 'dart:ui' show Color, hashValues;
 import 'dart:ui' as ui show lerpDouble;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
+
+import 'framework.dart' show BuildContext;
 
 /// Defines the color, opacity, and size of icons.
 ///
@@ -26,13 +29,13 @@ class IconThemeData extends Diagnosticable {
   ///
   /// The [color] is black, the [opacity] is 1.0, and the [size] is 24.0.
   const IconThemeData.fallback()
-      : color = const Color(0xFF000000),
-        _opacity = 1.0,
-        size = 24.0;
+    : color = const Color(0xFF000000),
+      _opacity = 1.0,
+      size = 24.0;
 
   /// Creates a copy of this icon theme but with the given fields replaced with
   /// the new values.
-  IconThemeData copyWith({Color color, double opacity, double size}) {
+  IconThemeData copyWith({ Color color, double opacity, double size }) {
     return IconThemeData(
       color: color ?? this.color,
       opacity: opacity ?? this.opacity,
@@ -53,6 +56,24 @@ class IconThemeData extends Diagnosticable {
     );
   }
 
+  /// Called by [IconTheme.of] to convert this instance to an [IconThemeData]
+  /// that fits the given [BuildContext].
+  ///
+  /// This method gives the ambient [IconThemeData] a chance to update itself,
+  /// after it's been retrieved by [IconTheme.of], and before being returned as
+  /// the final result. For instance, [CupertinoIconThemeData] overrides this method
+  /// to resolve [color], in case [color] is a [CupertinoDynamicColor] and needs
+  /// to be resolved against the given [BuildContext] before it can be used as a
+  /// regular [Color].
+  ///
+  /// The default implementation returns this [IconThemeData] as-is.
+  ///
+  /// See also:
+  ///
+  /// * [CupertinoIconThemeData.resolve] an implementation that resolves
+  ///   [CupertinoIconThemeData.color] before returning.
+  IconThemeData resolve(BuildContext context) => this;
+
   /// Whether all the properties of this object are non-null.
   bool get isConcrete => color != null && opacity != null && size != null;
 
@@ -72,9 +93,9 @@ class IconThemeData extends Diagnosticable {
   static IconThemeData lerp(IconThemeData a, IconThemeData b, double t) {
     assert(t != null);
     return IconThemeData(
-      color: Color.lerp(a.color, b.color, t),
-      opacity: ui.lerpDouble(a.opacity, b.opacity, t),
-      size: ui.lerpDouble(a.size, b.size, t),
+      color: Color.lerp(a?.color, b?.color, t),
+      opacity: ui.lerpDouble(a?.opacity, b?.opacity, t),
+      size: ui.lerpDouble(a?.size, b?.size, t),
     );
   }
 
@@ -94,7 +115,7 @@ class IconThemeData extends Diagnosticable {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<Color>('color', color, defaultValue: null));
+    properties.add(ColorProperty('color', color, defaultValue: null));
     properties.add(DoubleProperty('opacity', opacity, defaultValue: null));
     properties.add(DoubleProperty('size', size, defaultValue: null));
   }

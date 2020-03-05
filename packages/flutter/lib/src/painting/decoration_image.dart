@@ -156,21 +156,22 @@ class DecorationImage {
 
   @override
   String toString() {
-    final List<String> properties = <String>[];
-    properties.add('$image');
-    if (colorFilter != null)
-      properties.add('$colorFilter');
-    if (fit != null &&
-        !(fit == BoxFit.fill && centerSlice != null) &&
-        !(fit == BoxFit.scaleDown && centerSlice == null))
-      properties.add('$fit');
-    properties.add('$alignment');
-    if (centerSlice != null)
-      properties.add('centerSlice: $centerSlice');
-    if (repeat != ImageRepeat.noRepeat)
-      properties.add('$repeat');
-    if (matchTextDirection)
-      properties.add('match text direction');
+    final List<String> properties = <String>[
+      '$image',
+      if (colorFilter != null)
+        '$colorFilter',
+      if (fit != null &&
+          !(fit == BoxFit.fill && centerSlice != null) &&
+          !(fit == BoxFit.scaleDown && centerSlice == null))
+        '$fit',
+      '$alignment',
+      if (centerSlice != null)
+        'centerSlice: $centerSlice',
+      if (repeat != ImageRepeat.noRepeat)
+        '$repeat',
+      if (matchTextDirection)
+        'match text direction',
+    ];
     return '$runtimeType(${properties.join(", ")})';
   }
 }
@@ -220,15 +221,15 @@ class DecorationImagePainter {
         // We check this first so that the assert will fire immediately, not just
         // when the image is ready.
         if (configuration.textDirection == null) {
-          throw FlutterError(
-            'ImageDecoration.matchTextDirection can only be used when a TextDirection is available.\n'
-            'When DecorationImagePainter.paint() was called, there was no text direction provided '
-            'in the ImageConfiguration object to match.\n'
-            'The DecorationImage was:\n'
-            '  $_details\n'
-            'The ImageConfiguration was:\n'
-            '  $configuration'
-          );
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('ImageDecoration.matchTextDirection can only be used when a TextDirection is available.'),
+            ErrorDescription(
+              'When DecorationImagePainter.paint() was called, there was no text direction provided '
+              'in the ImageConfiguration object to match.'
+            ),
+            DiagnosticsProperty<DecorationImage>('The DecorationImage was', _details, style: DiagnosticsTreeStyle.errorProperty),
+            DiagnosticsProperty<ImageConfiguration>('The ImageConfiguration was', configuration, style: DiagnosticsTreeStyle.errorProperty),
+          ]);
         }
         return true;
       }());
@@ -238,9 +239,10 @@ class DecorationImagePainter {
 
     final ImageStream newImageStream = _details.image.resolve(configuration);
     if (newImageStream.key != _imageStream?.key) {
-      _imageStream?.removeListener(_imageListener);
+      final ImageStreamListener listener = ImageStreamListener(_handleImage);
+      _imageStream?.removeListener(listener);
       _imageStream = newImageStream;
-      _imageStream.addListener(_imageListener);
+      _imageStream.addListener(listener);
     }
     if (_image == null)
       return;
@@ -261,14 +263,14 @@ class DecorationImagePainter {
       centerSlice: _details.centerSlice,
       repeat: _details.repeat,
       flipHorizontally: flipHorizontally,
-      filterQuality: FilterQuality.low
+      filterQuality: FilterQuality.low,
     );
 
     if (clipPath != null)
       canvas.restore();
   }
 
-  void _imageListener(ImageInfo value, bool synchronousCall) {
+  void _handleImage(ImageInfo value, bool synchronousCall) {
     if (_image == value)
       return;
     _image = value;
@@ -284,7 +286,7 @@ class DecorationImagePainter {
   /// After this method has been called, the object is no longer usable.
   @mustCallSuper
   void dispose() {
-    _imageStream?.removeListener(_imageListener);
+    _imageStream?.removeListener(ImageStreamListener(_handleImage));
   }
 
   @override
@@ -373,7 +375,7 @@ void paintImage({
   ImageRepeat repeat = ImageRepeat.noRepeat,
   bool flipHorizontally = false,
   bool invertColors = false,
-  FilterQuality filterQuality = FilterQuality.low
+  FilterQuality filterQuality = FilterQuality.low,
 }) {
   assert(canvas != null);
   assert(image != null);
@@ -388,7 +390,7 @@ void paintImage({
   if (centerSlice != null) {
     sliceBorder = Offset(
       centerSlice.left + inputSize.width - centerSlice.right,
-      centerSlice.top + inputSize.height - centerSlice.bottom
+      centerSlice.top + inputSize.height - centerSlice.bottom,
     );
     outputSize -= sliceBorder;
     inputSize -= sliceBorder;
@@ -436,24 +438,27 @@ void paintImage({
   }
   if (centerSlice == null) {
     final Rect sourceRect = alignment.inscribe(
-      sourceSize, Offset.zero & inputSize
+      sourceSize, Offset.zero & inputSize,
     );
-    for (Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat))
-      canvas.drawImageRect(image, sourceRect, tileRect, paint);
+    if (repeat == ImageRepeat.noRepeat) {
+      canvas.drawImageRect(image, sourceRect, destinationRect, paint);
+    } else {
+      for (Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat))
+        canvas.drawImageRect(image, sourceRect, tileRect, paint);
+    }
   } else {
-    for (Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat))
-      canvas.drawImageNine(image, centerSlice, tileRect, paint);
+    if (repeat == ImageRepeat.noRepeat) {
+      canvas.drawImageNine(image, centerSlice, destinationRect, paint);
+    } else {
+      for (Rect tileRect in _generateImageTileRects(rect, destinationRect, repeat))
+        canvas.drawImageNine(image, centerSlice, tileRect, paint);
+    }
   }
   if (needSave)
     canvas.restore();
 }
 
 Iterable<Rect> _generateImageTileRects(Rect outputRect, Rect fundamentalRect, ImageRepeat repeat) sync* {
-  if (repeat == ImageRepeat.noRepeat) {
-    yield fundamentalRect;
-    return;
-  }
-
   int startX = 0;
   int startY = 0;
   int stopX = 0;

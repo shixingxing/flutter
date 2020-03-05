@@ -211,7 +211,7 @@ void main() {
               ),
             ),
           ),
-        )
+        ),
       );
 
       Scrollable.ensureVisible(findContext(0));
@@ -466,7 +466,7 @@ void main() {
               ],
             ),
           ),
-        )
+        ),
       ));
 
       await prepare(321.0);

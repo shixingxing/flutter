@@ -1,4 +1,4 @@
-  // Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -70,7 +70,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
-            child: MergeableMaterial()
+            child: MergeableMaterial(),
           ),
         ),
       ),
@@ -91,7 +91,7 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
+                    height: 100.0,
                   ),
                 ),
               ],
@@ -114,7 +114,7 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 200.0
+                    height: 200.0,
                   ),
                 ),
               ],
@@ -139,14 +139,14 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
+                    height: 100.0,
                   ),
                 ),
               ],
@@ -171,14 +171,14 @@ void main() {
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
+                    height: 100.0,
                   ),
                 ),
               ],
@@ -209,7 +209,7 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
+                    height: 100.0,
                   ),
                 ),
               ],
@@ -221,7 +221,7 @@ void main() {
 
     final BoxShadow boxShadow = kElevationToShadow[2][0];
     final RRect rrect = kMaterialEdges[MaterialType.card].toRRect(
-      Rect.fromLTRB(0.0, 0.0, 800.0, 100.0)
+      const Rect.fromLTRB(0.0, 0.0, 800.0, 100.0)
     );
     expect(
       find.byType(MergeableMaterial),
@@ -241,8 +241,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('x')
@@ -251,7 +251,7 @@ void main() {
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
+                    height: 100.0,
                   ),
                 ),
               ],
@@ -277,14 +277,14 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
+                    height: 100.0,
                   ),
                 ),
               ],
@@ -318,14 +318,14 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
+                    height: 100.0,
                   ),
                 ),
               ],
@@ -350,8 +350,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('x')
@@ -360,7 +360,7 @@ void main() {
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
+                    height: 100.0,
                   ),
                 ),
               ],
@@ -394,21 +394,21 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox box = tester.renderObject(find.byType(MergeableMaterial));
@@ -426,8 +426,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('x')
@@ -436,14 +436,14 @@ void main() {
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     await tester.pump(const Duration(milliseconds: 100));
@@ -468,21 +468,21 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     await tester.pump(const Duration(milliseconds: 100));
@@ -507,8 +507,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('x')
@@ -517,14 +517,14 @@ void main() {
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     await tester.pump(const Duration(milliseconds: 100));
@@ -551,21 +551,21 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox box = tester.renderObject(find.byType(MergeableMaterial));
@@ -583,28 +583,28 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     expect(box.size.height, equals(300));
@@ -623,28 +623,28 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox box = tester.renderObject(find.byType(MergeableMaterial));
@@ -662,21 +662,21 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     await tester.pump();
@@ -696,21 +696,21 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox box = tester.renderObject(find.byType(MergeableMaterial));
@@ -728,8 +728,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('x')
@@ -738,8 +738,8 @@ void main() {
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('y')
@@ -748,14 +748,14 @@ void main() {
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     await tester.pump(const Duration(milliseconds: 100));
@@ -784,8 +784,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('x')
@@ -794,8 +794,8 @@ void main() {
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('y')
@@ -804,14 +804,14 @@ void main() {
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox box = tester.renderObject(find.byType(MergeableMaterial));
@@ -831,21 +831,21 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     await tester.pump(const Duration(milliseconds: 100));
@@ -872,8 +872,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('x')
@@ -882,14 +882,14 @@ void main() {
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox box = tester.renderObject(find.byType(MergeableMaterial));
@@ -908,8 +908,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('y')
@@ -918,8 +918,8 @@ void main() {
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('z')
@@ -928,14 +928,14 @@ void main() {
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     await tester.pump(const Duration(milliseconds: 100));
@@ -964,8 +964,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('x')
@@ -974,8 +974,8 @@ void main() {
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('y')
@@ -984,14 +984,14 @@ void main() {
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox box = tester.renderObject(find.byType(MergeableMaterial));
@@ -1011,8 +1011,8 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('z')
@@ -1021,14 +1021,14 @@ void main() {
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     await tester.pump(const Duration(milliseconds: 100));
@@ -1051,8 +1051,8 @@ void main() {
     return box.decoration == BoxDecoration(
       border: Border(
         top: top ? side : BorderSide.none,
-        bottom: bottom ? side : BorderSide.none
-      )
+        bottom: bottom ? side : BorderSide.none,
+      ),
     );
   }
 
@@ -1068,35 +1068,35 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('D'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     List<Widget> boxes = tester.widgetList(find.byType(DecoratedBox)).toList();
@@ -1118,15 +1118,15 @@ void main() {
                   key: ValueKey<String>('A'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('B'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialGap(
                   key: ValueKey<String>('x')
@@ -1135,21 +1135,21 @@ void main() {
                   key: ValueKey<String>('C'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
+                    height: 100.0,
+                  ),
                 ),
                 MaterialSlice(
                   key: ValueKey<String>('D'),
                   child: SizedBox(
                     width: 100.0,
-                    height: 100.0
-                  )
-                )
-              ]
-            )
-          )
-        )
-      )
+                    height: 100.0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
 
     // Wait for dividers to shrink.

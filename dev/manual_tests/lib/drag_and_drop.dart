@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class ExampleDragTarget extends StatefulWidget {
@@ -32,11 +34,11 @@ class ExampleDragTargetState extends State<ExampleDragTarget> {
             color: data.isEmpty ? _color : Colors.grey.shade200,
             border: Border.all(
               width: 3.0,
-              color: data.isEmpty ? Colors.white : Colors.blue
+              color: data.isEmpty ? Colors.white : Colors.blue,
             ),
-          )
+          ),
         );
-      }
+      },
     );
   }
 }
@@ -65,10 +67,10 @@ class DotState extends State<Dot> {
         decoration: BoxDecoration(
           color: widget.color,
           border: Border.all(width: taps.toDouble()),
-          shape: BoxShape.circle
+          shape: BoxShape.circle,
         ),
-        child: widget.child
-      )
+        child: widget.child,
+      ),
     );
   }
 }
@@ -79,7 +81,7 @@ class ExampleDragSource extends StatelessWidget {
     this.color,
     this.heavy = false,
     this.under = true,
-    this.child
+    this.child,
   }) : super(key: key);
 
   final Color color;
@@ -103,13 +105,13 @@ class ExampleDragSource extends StatelessWidget {
       child: Dot(
         color: color,
         size: size,
-        child: Center(child: child)
-      )
+        child: Center(child: child),
+      ),
     );
 
     Widget feedback = Opacity(
       opacity: 0.75,
-      child: contents
+      child: contents,
     );
 
     Offset feedbackOffset;
@@ -118,7 +120,7 @@ class ExampleDragSource extends StatelessWidget {
       feedback = Transform(
         transform: Matrix4.identity()
                      ..translate(-size / 2.0, -(size / 2.0 + kFingerSize)),
-        child: feedback
+        child: feedback,
       );
       feedbackOffset = const Offset(0.0, -kFingerSize);
       anchor = DragAnchor.pointer;
@@ -133,7 +135,7 @@ class ExampleDragSource extends StatelessWidget {
         child: contents,
         feedback: feedback,
         feedbackOffset: feedbackOffset,
-        dragAnchor: anchor
+        dragAnchor: anchor,
       );
     } else {
       return Draggable<Color>(
@@ -141,7 +143,7 @@ class ExampleDragSource extends StatelessWidget {
         child: contents,
         feedback: feedback,
         feedbackOffset: feedbackOffset,
-        dragAnchor: anchor
+        dragAnchor: anchor,
       );
     }
   }
@@ -193,15 +195,15 @@ class MovableBall extends StatelessWidget {
         color: Colors.blue.shade700,
         size: kBallSize,
         tappable: true,
-        child: const Center(child: Text('BALL'))
-      )
+        child: const Center(child: Text('BALL')),
+      ),
     );
     final Widget dashedBall = Container(
       width: kBallSize,
       height: kBallSize,
       child: const CustomPaint(
         painter: DashOutlineCirclePainter()
-      )
+      ),
     );
     if (position == ballPosition) {
       return Draggable<bool>(
@@ -209,14 +211,14 @@ class MovableBall extends StatelessWidget {
         child: ball,
         childWhenDragging: dashedBall,
         feedback: ball,
-        maxSimultaneousDrags: 1
+        maxSimultaneousDrags: 1,
       );
     } else {
       return DragTarget<bool>(
         onAccept: (bool data) { callback(position); },
         builder: (BuildContext context, List<bool> accepted, List<dynamic> rejected) {
           return dashedBall;
-        }
+        },
       );
     }
   }
@@ -238,7 +240,7 @@ class DragAndDropAppState extends State<DragAndDropApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Drag and Drop Flutter Demo')
+        title: const Text('Drag and Drop Flutter Demo'),
       ),
       body: Column(
         children: <Widget>[
@@ -251,22 +253,22 @@ class DragAndDropAppState extends State<DragAndDropApp> {
                   color: Colors.yellow.shade300,
                   under: true,
                   heavy: false,
-                  child: const Text('under')
+                  child: const Text('under'),
                 ),
                 ExampleDragSource(
                   color: Colors.green.shade300,
                   under: false,
                   heavy: true,
-                  child: const Text('long-press above')
+                  child: const Text('long-press above'),
                 ),
                 ExampleDragSource(
                   color: Colors.indigo.shade300,
                   under: false,
                   heavy: false,
-                  child: const Text('above')
+                  child: const Text('above'),
                 ),
               ],
-            )
+            ),
           ),
           Expanded(
             child: Row(
@@ -275,8 +277,8 @@ class DragAndDropAppState extends State<DragAndDropApp> {
                 Expanded(child: ExampleDragTarget()),
                 Expanded(child: ExampleDragTarget()),
                 Expanded(child: ExampleDragTarget()),
-              ]
-            )
+              ],
+            ),
           ),
           Expanded(
             child: Row(
@@ -286,17 +288,23 @@ class DragAndDropAppState extends State<DragAndDropApp> {
                 MovableBall(2, position, moveBall),
                 MovableBall(3, position, moveBall),
               ],
-            )
+            ),
           ),
-        ]
-      )
+        ],
+      ),
     );
   }
 }
 
 void main() {
+  if (!kIsWeb && Platform.isMacOS) {
+    // TODO(gspencergoog): Update this when TargetPlatform includes macOS. https://github.com/flutter/flutter/issues/31366
+    // See https://github.com/flutter/flutter/wiki/Desktop-shells#target-platform-override
+    debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
+  }
+
   runApp(MaterialApp(
     title: 'Drag and Drop Flutter Demo',
-    home: DragAndDropApp()
+    home: DragAndDropApp(),
   ));
 }

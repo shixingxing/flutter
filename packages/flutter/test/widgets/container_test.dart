@@ -4,6 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mockito/mockito.dart';
 
 import '../rendering/mock_canvas.dart';
 
@@ -38,16 +39,16 @@ void main() {
 
     await tester.pumpWidget(Align(
       alignment: Alignment.topLeft,
-      child: container
+      child: container,
     ));
 
     final RenderBox box = tester.renderObject(find.byType(Container));
     expect(box, isNotNull);
 
     expect(box, paints
-      ..rect(rect: Rect.fromLTWH(5.0, 5.0, 53.0, 78.0), color: const Color(0xFF00FF00))
-      ..rect(rect: Rect.fromLTWH(26.0, 43.0, 25.0, 33.0), color: const Color(0xFFFFFF00))
-      ..rect(rect: Rect.fromLTWH(5.0, 5.0, 53.0, 78.0), color: const Color(0x7F0000FF))
+      ..rect(rect: const Rect.fromLTWH(5.0, 5.0, 53.0, 78.0), color: const Color(0xFF00FF00))
+      ..rect(rect: const Rect.fromLTWH(26.0, 43.0, 25.0, 33.0), color: const Color(0xFFFFFF00))
+      ..rect(rect: const Rect.fromLTWH(5.0, 5.0, 53.0, 78.0), color: const Color(0x7F0000FF)),
     );
 
     expect(box, hasAGoodToStringDeep);
@@ -323,6 +324,7 @@ void main() {
       box.toStringDeep(minLevel: DiagnosticLevel.hidden),
       equalsIgnoringHashCodes(
         'RenderPadding#00000 relayoutBoundary=up1\n'
+        ' │ needsCompositing: false\n'
         ' │ creator: Padding ← Container ← Align ← [root]\n'
         ' │ parentData: offset=Offset(0.0, 0.0) (can use size)\n'
         ' │ constraints: BoxConstraints(0.0<=w<=800.0, 0.0<=h<=600.0)\n'
@@ -335,6 +337,7 @@ void main() {
         ' │ textDirection: null\n'
         ' │\n'
         ' └─child: RenderConstrainedBox#00000 relayoutBoundary=up2\n'
+        '   │ needsCompositing: false\n'
         '   │ creator: ConstrainedBox ← Padding ← Container ← Align ← [root]\n'
         '   │ parentData: offset=Offset(5.0, 5.0) (can use size)\n'
         '   │ constraints: BoxConstraints(0.0<=w<=790.0, 0.0<=h<=590.0)\n'
@@ -346,6 +349,7 @@ void main() {
         '   │ additionalConstraints: BoxConstraints(w=53.0, h=78.0)\n'
         '   │\n'
         '   └─child: RenderDecoratedBox#00000\n'
+        '     │ needsCompositing: false\n'
         '     │ creator: DecoratedBox ← ConstrainedBox ← Padding ← Container ←\n'
         '     │   Align ← [root]\n'
         '     │ parentData: <none> (can use size)\n'
@@ -368,6 +372,7 @@ void main() {
         '     │   android)\n'
         '     │\n'
         '     └─child: RenderDecoratedBox#00000\n'
+        '       │ needsCompositing: false\n'
         '       │ creator: DecoratedBox ← DecoratedBox ← ConstrainedBox ← Padding ←\n'
         '       │   Container ← Align ← [root]\n'
         '       │ parentData: <none> (can use size)\n'
@@ -390,6 +395,7 @@ void main() {
         '       │   android)\n'
         '       │\n'
         '       └─child: RenderPadding#00000\n'
+        '         │ needsCompositing: false\n'
         '         │ creator: Padding ← DecoratedBox ← DecoratedBox ← ConstrainedBox ←\n'
         '         │   Padding ← Container ← Align ← [root]\n'
         '         │ parentData: <none> (can use size)\n'
@@ -403,6 +409,7 @@ void main() {
         '         │ textDirection: null\n'
         '         │\n'
         '         └─child: RenderPositionedBox#00000\n'
+        '           │ needsCompositing: false\n'
         '           │ creator: Align ← Padding ← DecoratedBox ← DecoratedBox ←\n'
         '           │   ConstrainedBox ← Padding ← Container ← Align ← [root]\n'
         '           │ parentData: offset=Offset(7.0, 7.0) (can use size)\n'
@@ -418,6 +425,7 @@ void main() {
         '           │ heightFactor: expand\n'
         '           │\n'
         '           └─child: RenderConstrainedBox#00000 relayoutBoundary=up1\n'
+        '             │ needsCompositing: false\n'
         '             │ creator: SizedBox ← Align ← Padding ← DecoratedBox ← DecoratedBox\n'
         '             │   ← ConstrainedBox ← Padding ← Container ← Align ← [root]\n'
         '             │ parentData: offset=Offset(14.0, 31.0) (can use size)\n'
@@ -430,6 +438,7 @@ void main() {
         '             │ additionalConstraints: BoxConstraints(w=25.0, h=33.0)\n'
         '             │\n'
         '             └─child: RenderDecoratedBox#00000\n'
+        '                 needsCompositing: false\n'
         '                 creator: DecoratedBox ← SizedBox ← Align ← Padding ← DecoratedBox\n'
         '                   ← DecoratedBox ← ConstrainedBox ← Padding ← Container ← Align ←\n'
         '                   [root]\n'
@@ -453,6 +462,32 @@ void main() {
         '                   android)\n',
       ),
     );
+
+    final RenderBox decoratedBox = tester.renderObject(find.byType(DecoratedBox).last);
+    final PaintingContext context = _MockPaintingContext();
+    final Canvas canvas = _MockCanvas();
+    int saveCount = 0;
+    when(canvas.getSaveCount()).thenAnswer((_) => saveCount++);
+    when(context.canvas).thenReturn(canvas);
+    FlutterError error;
+    try {
+      decoratedBox.paint(context, const Offset(0, 0));
+    } on FlutterError catch (e) {
+      error = e;
+    }
+    expect(error, isNotNull);
+    expect(
+      error.toStringDeep(),
+      'FlutterError\n'
+      '   BoxDecoration painter had mismatching save and restore calls.\n'
+      '   Before painting the decoration, the canvas save count was 0.\n'
+      '   After painting it, the canvas save count was 2. Every call to\n'
+      '   save() or saveLayer() must be matched by a call to restore().\n'
+      '   The decoration was:\n'
+      '     BoxDecoration(color: Color(0xffffff00))\n'
+      '   The painter was:\n'
+      '     BoxPainter for BoxDecoration(color: Color(0xffffff00))\n'
+    );
   });
 
   testWidgets('Can be placed in an infinite box', (WidgetTester tester) async {
@@ -464,3 +499,6 @@ void main() {
     );
   });
 }
+
+class _MockPaintingContext extends Mock implements PaintingContext {}
+class _MockCanvas extends Mock implements Canvas {}

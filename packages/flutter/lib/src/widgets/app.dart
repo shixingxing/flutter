@@ -4,14 +4,16 @@
 
 import 'dart:async';
 import 'dart:collection' show HashMap;
-import 'dart:ui' as ui show window;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
+import 'actions.dart';
 import 'banner.dart';
 import 'basic.dart';
 import 'binding.dart';
+import 'focus_traversal.dart';
 import 'framework.dart';
 import 'localizations.dart';
 import 'media_query.dart';
@@ -19,6 +21,7 @@ import 'navigator.dart';
 import 'pages.dart';
 import 'performance_overlay.dart';
 import 'semantics_debugger.dart';
+import 'shortcuts.dart';
 import 'text.dart';
 import 'title.dart';
 import 'widget_inspector.dart';
@@ -34,7 +37,7 @@ export 'dart:ui' show Locale;
 /// The [locales] list is the device's preferred locales when the app started, or the
 /// device's preferred locales the user selected after the app was started. This list
 /// is in order of preference. If this list is null or empty, then Flutter has not yet
-/// recieved the locale information from the platform. The [supportedLocales] parameter
+/// received the locale information from the platform. The [supportedLocales] parameter
 /// is just the value of [WidgetsApp.supportedLocales].
 ///
 /// See also:
@@ -47,9 +50,8 @@ typedef LocaleListResolutionCallback = Locale Function(List<Locale> locales, Ite
 /// The signature of [WidgetsApp.localeResolutionCallback].
 ///
 /// It is recommended to provide a [LocaleListResolutionCallback] instead of a
-/// [LocaleResolutionCallback] when possible, as [LocaleListResolutionCallback] as
-/// this callback only recieves a subset of the information provided
-/// in [LocaleListResolutionCallback].
+/// [LocaleResolutionCallback] when possible, as [LocaleResolutionCallback] only
+/// receives a subset of the information provided in [LocaleListResolutionCallback].
 ///
 /// A [LocaleResolutionCallback] is responsible for computing the locale of the app's
 /// [Localizations] object when the app starts and when user changes the default
@@ -61,7 +63,7 @@ typedef LocaleListResolutionCallback = Locale Function(List<Locale> locales, Ite
 /// The [locale] is either the value of [WidgetsApp.locale], or the device's default
 /// locale when the app started, or the device locale the user selected after the app
 /// was started. The default locale is the first locale in the list of preferred
-/// locales. If [locale] is null, then Flutter has not yet recieved the locale
+/// locales. If [locale] is null, then Flutter has not yet received the locale
 /// information from the platform. The [supportedLocales] parameter is just the value of
 /// [WidgetsApp.supportedLocales].
 ///
@@ -84,9 +86,7 @@ typedef GenerateAppTitle = String Function(BuildContext context);
 /// The signature of [WidgetsApp.pageRouteBuilder].
 ///
 /// Creates a [PageRoute] using the given [RouteSettings] and [WidgetBuilder].
-// TODO(dnfield): when https://github.com/dart-lang/sdk/issues/34572 is resolved
-// this can use type arguments again
-typedef PageRouteFactory = PageRoute<dynamic> Function(RouteSettings settings, WidgetBuilder builder);
+typedef PageRouteFactory = PageRoute<T> Function<T>(RouteSettings settings, WidgetBuilder builder);
 
 /// A convenience class that wraps a number of widgets that are commonly
 /// required for an application.
@@ -364,10 +364,12 @@ class WidgetsApp extends StatefulWidget {
   /// also. For example, if the route was `/a/b/c`, then the app would start
   /// with the three routes `/a`, `/a/b`, and `/a/b/c` loaded, in that order.
   ///
-  /// If any part of this process fails to generate routes, then the
-  /// [initialRoute] is ignored and [Navigator.defaultRouteName] is used instead
-  /// (`/`). This can happen if the app is started with an intent that specifies
-  /// a non-existent route.
+  /// Intermediate routes aren't required to exist. In the example above, `/a`
+  /// and `/a/b` could be skipped if they have no matching route. But `/a/b/c` is
+  /// required to have a route, else [initialRoute] is ignored and
+  /// [Navigator.defaultRouteName] is used instead (`/`). This can happen if the
+  /// app is started with an intent that specifies a non-existent route.
+  ///
   /// The [Navigator] is only built if routes are provided (either via [home],
   /// [routes], [onGenerateRoute], or [onUnknownRoute]); if they are not,
   /// [initialRoute] must be null and [builder] must not be null.
@@ -377,6 +379,7 @@ class WidgetsApp extends StatefulWidget {
   ///  * [Navigator.initialRoute], which is used to implement this property.
   ///  * [Navigator.push], for pushing additional routes.
   ///  * [Navigator.pop], for removing a route from the stack.
+  ///
   /// {@endtemplate}
   final String initialRoute;
 
@@ -528,7 +531,7 @@ class WidgetsApp extends StatefulWidget {
   /// This callback considers the entire list of preferred locales.
   ///
   /// This algorithm should be able to handle a null or empty list of preferred locales,
-  /// which indicates Flutter has not yet recieved locale information from the platform.
+  /// which indicates Flutter has not yet received locale information from the platform.
   ///
   /// See also:
   ///
@@ -545,7 +548,7 @@ class WidgetsApp extends StatefulWidget {
   /// over [localeResolutionCallback] as it provides the full preferred locales list.
   ///
   /// This algorithm should be able to handle a null locale, which indicates
-  /// Flutter has not yet recieved locale information from the platform.
+  /// Flutter has not yet received locale information from the platform.
   ///
   /// See also:
   ///
@@ -589,8 +592,8 @@ class WidgetsApp extends StatefulWidget {
   /// [Locale.countryCode] to specify a generic fallback for a particular script.
   ///
   /// A fully supported language with multiple scripts should define a generic language-only
-  /// locale (eg. 'zh'), language+script only locales (eg. 'zh_Hans' and 'zh_Hant'),
-  /// and any language+script+country locales (eg. 'zh_Hans_CN'). Fully defining all of
+  /// locale (e.g. 'zh'), language+script only locales (e.g. 'zh_Hans' and 'zh_Hant'),
+  /// and any language+script+country locales (e.g. 'zh_Hans_CN'). Fully defining all of
   /// these locales as supported is not strictly required but allows for proper locale resolution in
   /// the most number of cases. These locales can be specified with the [Locale.fromSubtags]
   /// constructor:
@@ -629,7 +632,7 @@ class WidgetsApp extends StatefulWidget {
   ///
   /// See also:
   ///
-  ///  * <https://flutter.io/debugging/#performanceoverlay>
+  ///  * <https://flutter.dev/debugging/#performanceoverlay>
   final bool showPerformanceOverlay;
 
   /// Checkerboards raster cache images.
@@ -705,15 +708,14 @@ class WidgetsApp extends StatefulWidget {
   _WidgetsAppState createState() => _WidgetsAppState();
 }
 
-class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserver {
-
+class _WidgetsAppState extends State<WidgetsApp> with WidgetsBindingObserver {
   // STATE LIFECYCLE
 
   @override
   void initState() {
     super.initState();
     _updateNavigator();
-    _locale = _resolveLocales(ui.window.locales, widget.supportedLocales);
+    _locale = _resolveLocales(WidgetsBinding.instance.window.locales, widget.supportedLocales);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -729,13 +731,6 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) { }
-
-  @override
-  void didHaveMemoryPressure() { }
-
 
   // NAVIGATOR
 
@@ -755,7 +750,7 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
       assert(widget.pageRouteBuilder != null,
         'The default onGenerateRoute handler for WidgetsApp must have a '
         'pageRouteBuilder set if the home or routes properties are set.');
-      final Route<dynamic> route = widget.pageRouteBuilder(
+      final Route<dynamic> route = widget.pageRouteBuilder<dynamic>(
         settings,
         pageContentBuilder,
       );
@@ -788,12 +783,14 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
     final Route<dynamic> result = widget.onUnknownRoute(settings);
     assert(() {
       if (result == null) {
-        throw FlutterError(
-          'The onUnknownRoute callback returned null.\n'
-          'When the $runtimeType requested the route $settings from its '
-          'onUnknownRoute callback, the callback returned null. Such callbacks '
-          'must never return null.'
-        );
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('The onUnknownRoute callback returned null.'),
+          ErrorDescription(
+            'When the $runtimeType requested the route $settings from its '
+            'onUnknownRoute callback, the callback returned null. Such callbacks '
+            'must never return null.'
+          )
+        ]);
       }
       return true;
     }());
@@ -851,7 +848,7 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
   /// Custom resolution algorithms can be provided through [WidgetsApp.localeListResolutionCallback]
   /// or [WidgetsApp.localeResolutionCallback].
   ///
-  /// When no custom locale resolition algorithms are provided or if both fail to resolve,
+  /// When no custom locale resolution algorithms are provided or if both fail to resolve,
   /// Flutter will default to calling this algorithm.
   ///
   /// This algorithm prioritizes speed at the cost of slightly less appropriate
@@ -863,7 +860,7 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
   ///
   /// In the case where a locale is matched by languageCode-only and is not the
   /// default (first) locale, the next locale in preferredLocales with a
-  /// perfect match can supercede the languageCode-only match if it exists.
+  /// perfect match can supersede the languageCode-only match if it exists.
   ///
   /// When a preferredLocale matches more than one supported locale, it will resolve
   /// to the first matching locale listed in the supportedLocales.
@@ -877,11 +874,11 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
   /// To summarize, the main matching priority is:
   ///
   ///  1. [Locale.languageCode], [Locale.scriptCode], and [Locale.countryCode]
-  ///  2. [Locale.languageCode] and [Locale.countryCode] only
+  ///  2. [Locale.languageCode] and [Locale.scriptCode] only
   ///  3. [Locale.languageCode] and [Locale.countryCode] only
   ///  4. [Locale.languageCode] only (with caveats, see above)
-  ///  6. [Locale.countryCode] only when all [preferredLocales] fail to match
-  ///  5. returns [supportedLocales.first] as a fallback
+  ///  5. [Locale.countryCode] only when all [preferredLocales] fail to match
+  ///  6. returns [supportedLocales.first] as a fallback
   ///
   /// This algorithm does not take language distance (how similar languages are to each other)
   /// into account, and will not handle edge cases such as resolving `de` to `fr` rather than `zh`
@@ -932,7 +929,7 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
       }
       // Look for language+country match.
       if (userLocale.countryCode != null) {
-      final Locale match = languageAndCountryLocales['${userLocale.languageCode}_${userLocale.countryCode}'];
+        final Locale match = languageAndCountryLocales['${userLocale.languageCode}_${userLocale.countryCode}'];
         if (match != null) {
           return match;
         }
@@ -994,37 +991,6 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
     yield DefaultWidgetsLocalizations.delegate;
   }
 
-  // ACCESSIBILITY
-
-  @override
-  void didChangeAccessibilityFeatures() {
-    setState(() {
-      // The properties of ui.window have changed. We use them in our build
-      // function, so we need setState(), but we don't cache anything locally.
-    });
-  }
-
-
-  // METRICS
-
-  @override
-  void didChangeMetrics() {
-    setState(() {
-      // The properties of ui.window have changed. We use them in our build
-      // function, so we need setState(), but we don't cache anything locally.
-    });
-  }
-
-  @override
-  void didChangeTextScaleFactor() {
-    setState(() {
-      // The textScaleFactor property of ui.window has changed. We reference
-      // ui.window in our build function, so we need to call setState(), but
-      // we don't need to cache anything locally.
-    });
-  }
-
-
   // BUILDER
 
   bool _debugCheckLocalizations(Locale appLocale) {
@@ -1063,7 +1029,7 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
         );
       }
       message.writeln(
-        'See https://flutter.io/tutorials/internationalization/ for more\n'
+        'See https://flutter.dev/tutorials/internationalization/ for more\n'
         'information about configuring an app\'s locale, supportedLocales,\n'
         'and localizationsDelegates parameters.'
       );
@@ -1074,18 +1040,37 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
     return true;
   }
 
+  final Map<LogicalKeySet, Intent> _keyMap = <LogicalKeySet, Intent>{
+    LogicalKeySet(LogicalKeyboardKey.tab): const Intent(NextFocusAction.key),
+    LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.tab): const Intent(PreviousFocusAction.key),
+    LogicalKeySet(LogicalKeyboardKey.arrowLeft): const DirectionalFocusIntent(TraversalDirection.left),
+    LogicalKeySet(LogicalKeyboardKey.arrowRight): const DirectionalFocusIntent(TraversalDirection.right),
+    LogicalKeySet(LogicalKeyboardKey.arrowDown): const DirectionalFocusIntent(TraversalDirection.down),
+    LogicalKeySet(LogicalKeyboardKey.arrowUp): const DirectionalFocusIntent(TraversalDirection.up),
+    LogicalKeySet(LogicalKeyboardKey.enter): const Intent(ActivateAction.key),
+    LogicalKeySet(LogicalKeyboardKey.space): const Intent(SelectAction.key),
+  };
+
+  final Map<LocalKey, ActionFactory> _actionMap = <LocalKey, ActionFactory>{
+    DoNothingAction.key: () => const DoNothingAction(),
+    RequestFocusAction.key: () => RequestFocusAction(),
+    NextFocusAction.key: () => NextFocusAction(),
+    PreviousFocusAction.key: () => PreviousFocusAction(),
+    DirectionalFocusAction.key: () => DirectionalFocusAction(),
+  };
+
   @override
   Widget build(BuildContext context) {
     Widget navigator;
     if (_navigator != null) {
       navigator = Navigator(
         key: _navigator,
-        // If ui.window.defaultRouteName isn't '/', we should assume it was set
+        // If window.defaultRouteName isn't '/', we should assume it was set
         // intentionally via `setInitialRoute`, and should override whatever
         // is in [widget.initialRoute].
-        initialRoute: ui.window.defaultRouteName != Navigator.defaultRouteName
-            ? ui.window.defaultRouteName
-            : widget.initialRoute ?? ui.window.defaultRouteName,
+        initialRoute: WidgetsBinding.instance.window.defaultRouteName != Navigator.defaultRouteName
+            ? WidgetsBinding.instance.window.defaultRouteName
+            : widget.initialRoute ?? WidgetsBinding.instance.window.defaultRouteName,
         onGenerateRoute: _onGenerateRoute,
         onUnknownRoute: _onUnknownRoute,
         observers: widget.navigatorObservers,
@@ -1130,7 +1115,7 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
         children: <Widget>[
           result,
           Positioned(top: 0.0, left: 0.0, right: 0.0, child: performanceOverlay),
-        ]
+        ],
       );
     }
 
@@ -1185,13 +1170,95 @@ class _WidgetsAppState extends State<WidgetsApp> implements WidgetsBindingObserv
 
     assert(_debugCheckLocalizations(appLocale));
 
-    return MediaQuery(
-      data: MediaQueryData.fromWindow(ui.window),
-      child: Localizations(
-        locale: appLocale,
-        delegates: _localizationsDelegates.toList(),
-        child: title,
+    return Shortcuts(
+      shortcuts: _keyMap,
+      child: Actions(
+        actions: _actionMap,
+        child: DefaultFocusTraversal(
+          policy: ReadingOrderTraversalPolicy(),
+          child: _MediaQueryFromWindow(
+            child: Localizations(
+              locale: appLocale,
+              delegates: _localizationsDelegates.toList(),
+              child: title,
+            ),
+          ),
+        ),
       ),
     );
+  }
+}
+
+/// Builds [MediaQuery] from `window` by listening to [WidgetsBinding].
+///
+/// It is performed in a standalone widget to rebuild **only** [MediaQuery] and
+/// its dependents when `window` changes, instead of rebuilding the entire widget tree.
+class _MediaQueryFromWindow extends StatefulWidget {
+  const _MediaQueryFromWindow({Key key, this.child}) : super(key: key);
+
+  final Widget child;
+
+  @override
+  _MediaQueryFromWindowsState createState() => _MediaQueryFromWindowsState();
+}
+
+class _MediaQueryFromWindowsState extends State<_MediaQueryFromWindow> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  // ACCESSIBILITY
+
+  @override
+  void didChangeAccessibilityFeatures() {
+    setState(() {
+      // The properties of window have changed. We use them in our build
+      // function, so we need setState(), but we don't cache anything locally.
+    });
+  }
+
+  // METRICS
+
+  @override
+  void didChangeMetrics() {
+    setState(() {
+      // The properties of window have changed. We use them in our build
+      // function, so we need setState(), but we don't cache anything locally.
+    });
+  }
+
+  @override
+  void didChangeTextScaleFactor() {
+    setState(() {
+      // The textScaleFactor property of window has changed. We reference
+      // window in our build function, so we need to call setState(), but
+      // we don't need to cache anything locally.
+    });
+  }
+
+  // RENDERING
+  @override
+  void didChangePlatformBrightness() {
+    setState(() {
+      // The platformBrightness property of window has changed. We reference
+      // window in our build function, so we need to call setState(), but
+      // we don't need to cache anything locally.
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MediaQuery(
+      data: MediaQueryData.fromWindow(WidgetsBinding.instance.window),
+      child: widget.child,
+    );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 }

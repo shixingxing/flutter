@@ -21,10 +21,10 @@ void main() {
               key: inside,
               width: 100.0,
               height: 50.0,
-            )
-          )
-        )
-      )
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox outsideBox = tester.firstRenderObject(find.byKey(outside));
@@ -57,10 +57,10 @@ void main() {
               key: inside,
               width: 100.0,
               height: 50.0,
-            )
-          )
-        )
-      )
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox outsideBox = tester.firstRenderObject(find.byKey(outside));
@@ -93,10 +93,10 @@ void main() {
               key: inside,
               width: 100.0,
               height: 50.0,
-            )
-          )
-        )
-      )
+            ),
+          ),
+        ),
+      ),
     );
 
     final RenderBox outsideBox = tester.firstRenderObject(find.byKey(outside));
@@ -461,12 +461,12 @@ void main() {
                 child: Container(
                   key: key1,
                   color: const Color(0xFF000000),
-                )
-              )
-            )
-          )
-        )
-      )
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
     expect(_pointerDown, isFalse);
     await tester.tap(find.byKey(key1));

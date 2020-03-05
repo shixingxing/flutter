@@ -1,4 +1,4 @@
-/// Copyright 2016 The Chromium Authors. All rights reserved.
+// Copyright 2016 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -100,7 +100,7 @@ class ScrollConfiguration extends InheritedWidget {
   /// If no [ScrollConfiguration] widget is in scope of the given `context`,
   /// a default [ScrollBehavior] instance is returned.
   static ScrollBehavior of(BuildContext context) {
-    final ScrollConfiguration configuration = context.inheritFromWidgetOfExactType(ScrollConfiguration);
+    final ScrollConfiguration configuration = context.dependOnInheritedWidgetOfExactType<ScrollConfiguration>();
     return configuration?.behavior ?? const ScrollBehavior();
   }
 

@@ -4,6 +4,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 
 import 'states.dart';
@@ -16,6 +17,7 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: ListView(
+          dragStartBehavior: DragStartBehavior.down,
           children: kStates.map<Widget>((String state) {
             return GestureDetector(
               onTap: () {
@@ -26,6 +28,7 @@ void main() {
                 color: const Color(0xFF0000FF),
                 child: Text(state),
               ),
+              dragStartBehavior: DragStartBehavior.down,
             );
           }).toList(),
         ),
@@ -54,6 +57,7 @@ void main() {
       return Directionality(
         textDirection: TextDirection.ltr,
         child: ListView(
+          dragStartBehavior: DragStartBehavior.down,
           children: kStates.take(n).map<Widget>((String state) {
             return Container(
               height: 200.0,
@@ -85,11 +89,13 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: CustomScrollView(
+          dragStartBehavior: DragStartBehavior.down,
           slivers: <Widget>[
             SliverList(
               delegate: SliverChildListDelegate(
                 kStates.map<Widget>((String state) {
                   return GestureDetector(
+                    dragStartBehavior: DragStartBehavior.down,
                     onTap: () {
                       log.add(state);
                     },
@@ -344,7 +350,10 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: NotificationListener<OverscrollNotification>(
-          onNotification: (OverscrollNotification message) { scrolled = true; return false; },
+          onNotification: (OverscrollNotification message) {
+            scrolled = true;
+            return false;
+          },
           child: ListView(
             primary: true,
             children: const <Widget>[],
@@ -362,7 +371,10 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: NotificationListener<OverscrollNotification>(
-          onNotification: (OverscrollNotification message) { scrolled = true; return false; },
+          onNotification: (OverscrollNotification message) {
+            scrolled = true;
+            return false;
+          },
           child: ListView(
             primary: false,
             children: const <Widget>[],
@@ -380,7 +392,10 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: NotificationListener<OverscrollNotification>(
-          onNotification: (OverscrollNotification message) { scrolled = true; return false; },
+          onNotification: (OverscrollNotification message) {
+            scrolled = true;
+            return false;
+          },
           child: ListView(
             primary: false,
             physics: const AlwaysScrollableScrollPhysics(),
@@ -399,7 +414,10 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: NotificationListener<OverscrollNotification>(
-          onNotification: (OverscrollNotification message) { scrolled = true; return false; },
+          onNotification: (OverscrollNotification message) {
+            scrolled = true;
+            return false;
+          },
           child: ListView(
             primary: true,
             physics: const ScrollPhysics(),
@@ -425,7 +443,7 @@ void main() {
             separatorBuilder: (BuildContext context, int index) {
               if (index == 0) {
                 return firstSeparator;
-              } else  {
+              } else {
                 return const Divider();
               }
             },
@@ -540,5 +558,34 @@ void main() {
     await tester.pumpWidget(buildFrame(true));
     expect(tester.takeException(), isInstanceOf<Exception>());
     expect(finder, findsOneWidget);
+  });
+
+  testWidgets('ListView.builder asserts on negative childCount', (WidgetTester tester) async {
+    expect(() => ListView.builder(
+      itemBuilder: (BuildContext context, int index) {
+        return const SizedBox();
+      },
+      itemCount: -1,
+    ), throwsA(isInstanceOf<AssertionError>()));
+  });
+
+  testWidgets('ListView.builder asserts on negative semanticChildCount', (WidgetTester tester) async {
+    expect(() => ListView.builder(
+      itemBuilder: (BuildContext context, int index) {
+        return const SizedBox();
+      },
+      itemCount: 1,
+      semanticChildCount: -1,
+    ), throwsA(isInstanceOf<AssertionError>()));
+  });
+
+  testWidgets('ListView.builder asserts on nonsensical childCount/semanticChildCount', (WidgetTester tester) async {
+    expect(() => ListView.builder(
+      itemBuilder: (BuildContext context, int index) {
+        return const SizedBox();
+      },
+      itemCount: 1,
+      semanticChildCount: 4,
+    ), throwsA(isInstanceOf<AssertionError>()));
   });
 }

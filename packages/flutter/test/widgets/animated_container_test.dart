@@ -41,8 +41,8 @@ void main() {
       AnimatedContainer(
         key: key,
         duration: const Duration(milliseconds: 200),
-        decoration: decorationA
-      )
+        decoration: decorationA,
+      ),
     );
 
     final RenderDecoratedBox box = key.currentContext.findRenderObject();
@@ -53,8 +53,8 @@ void main() {
       AnimatedContainer(
         key: key,
         duration: const Duration(milliseconds: 200),
-        decoration: decorationB
-      )
+        decoration: decorationB,
+      ),
     );
 
     expect(key.currentContext.findRenderObject(), equals(box));
@@ -101,7 +101,7 @@ void main() {
       AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         color: const Color(0xFF00FF00),
-      )
+      ),
     );
     expect(tester.binding.transientCallbackCount, 0);
     await tester.pump(const Duration(seconds: 1));
@@ -110,7 +110,7 @@ void main() {
       AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         color: const Color(0xFF00FF00),
-      )
+      ),
     );
     expect(tester.binding.transientCallbackCount, 0);
     await tester.pump(const Duration(seconds: 1));
@@ -119,7 +119,7 @@ void main() {
       AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         color: const Color(0xFF0000FF),
-      )
+      ),
     );
     expect(tester.binding.transientCallbackCount, 1); // this is the only time an animation should have started!
     await tester.pump(const Duration(seconds: 1));
@@ -128,7 +128,7 @@ void main() {
       AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         color: const Color(0xFF0000FF),
-      )
+      ),
     );
     expect(tester.binding.transientCallbackCount, 0);
   });
@@ -224,9 +224,9 @@ void main() {
           duration: const Duration(milliseconds: 200),
           width: 100.0,
           height: 100.0,
-          child: const Text('X', textDirection: TextDirection.ltr)
-        )
-      )
+          child: const Text('X', textDirection: TextDirection.ltr),
+        ),
+      ),
     );
 
     await tester.pump();
@@ -244,9 +244,9 @@ void main() {
           duration: const Duration(milliseconds: 200),
           width: 200.0,
           height: 200.0,
-          child: const Text('X', textDirection: TextDirection.ltr)
-        )
-      )
+          child: const Text('X', textDirection: TextDirection.ltr),
+        ),
+      ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -268,9 +268,9 @@ void main() {
           duration: const Duration(milliseconds: 200),
           width: 200.0,
           height: 100.0,
-          child: const Text('X', textDirection: TextDirection.ltr)
-        )
-      )
+          child: const Text('X', textDirection: TextDirection.ltr),
+        ),
+      ),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));

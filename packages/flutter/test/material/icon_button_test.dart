@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../rendering/mock_canvas.dart';
 import '../widgets/semantics_tester.dart';
+import 'feedback_tester.dart';
 
 class MockOnPressedFunction implements Function {
   int called = 0;
@@ -90,9 +91,7 @@ void main() {
     expect(box.size, const Size(80.0, 80.0));
   });
 
-  testWidgets(
-    'test default icon buttons can be stretched if specified',
-    (WidgetTester tester) async {
+  testWidgets('test default icon buttons can be stretched if specified', (WidgetTester tester) async {
     await tester.pumpWidget(
       Directionality(
         textDirection: TextDirection.ltr,
@@ -222,7 +221,7 @@ void main() {
       Material.of(tester.element(find.byType(IconButton))),
       paints
         ..circle(color: directSplashColor)
-        ..circle(color: directHighlightColor)
+        ..circle(color: directHighlightColor),
     );
 
     const Color themeSplashColor1 = Color(0xFF000F00);
@@ -249,7 +248,7 @@ void main() {
       Material.of(tester.element(find.byType(IconButton))),
       paints
         ..circle(color: themeSplashColor1)
-        ..circle(color: themeHighlightColor1)
+        ..circle(color: themeHighlightColor1),
     );
 
     const Color themeSplashColor2 = Color(0xFF002200);
@@ -269,7 +268,7 @@ void main() {
       Material.of(tester.element(find.byType(IconButton))),
       paints
         ..circle(color: themeSplashColor2)
-        ..circle(color: themeHighlightColor2)
+        ..circle(color: themeHighlightColor2),
     );
 
     await gesture.up();
@@ -290,18 +289,19 @@ void main() {
     expect(semantics, hasSemantics(TestSemantics.root(
       children: <TestSemantics>[
         TestSemantics.rootChild(
-          rect: Rect.fromLTRB(0.0, 0.0, 48.0, 48.0),
+          rect: const Rect.fromLTRB(0.0, 0.0, 48.0, 48.0),
           actions: <SemanticsAction>[
-            SemanticsAction.tap
+            SemanticsAction.tap,
           ],
           flags: <SemanticsFlag>[
             SemanticsFlag.hasEnabledState,
+            SemanticsFlag.isButton,
             SemanticsFlag.isEnabled,
-            SemanticsFlag.isButton
+            SemanticsFlag.isFocusable,
           ],
           label: 'link',
-        )
-      ]
+        ),
+      ],
     ), ignoreId: true, ignoreTransform: true));
 
     semantics.dispose();
@@ -322,25 +322,161 @@ void main() {
     expect(semantics, hasSemantics(TestSemantics.root(
         children: <TestSemantics>[
           TestSemantics.rootChild(
-            rect: Rect.fromLTRB(0.0, 0.0, 48.0, 48.0),
+            rect: const Rect.fromLTRB(0.0, 0.0, 48.0, 48.0),
             flags: <SemanticsFlag>[
               SemanticsFlag.hasEnabledState,
-              SemanticsFlag.isButton
+              SemanticsFlag.isButton,
             ],
             label: 'link',
-          )
-        ]
+          ),
+        ],
     ), ignoreId: true, ignoreTransform: true));
 
     semantics.dispose();
   });
+
+  testWidgets('IconButton loses focus when disabled.', (WidgetTester tester) async {
+    final FocusNode focusNode = FocusNode(debugLabel: 'IconButton');
+    await tester.pumpWidget(
+      wrap(
+        child: IconButton(
+          focusNode: focusNode,
+          autofocus: true,
+          onPressed: () {},
+          icon: const Icon(Icons.link),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    expect(focusNode.hasPrimaryFocus, isTrue);
+
+    await tester.pumpWidget(
+      wrap(
+        child: IconButton(
+          focusNode: focusNode,
+          autofocus: true,
+          onPressed: null,
+          icon: const Icon(Icons.link),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(focusNode.hasPrimaryFocus, isFalse);
+  });
+
+  testWidgets("Disabled IconButton can't be traversed to when disabled.", (WidgetTester tester) async {
+    final FocusNode focusNode1 = FocusNode(debugLabel: 'IconButton 1');
+    final FocusNode focusNode2 = FocusNode(debugLabel: 'IconButton 2');
+
+    await tester.pumpWidget(
+      wrap(
+        child: Column(
+          children: <Widget>[
+            IconButton(
+              focusNode: focusNode1,
+              autofocus: true,
+              onPressed: () {},
+              icon: const Icon(Icons.link),
+            ),
+            IconButton(
+              focusNode: focusNode2,
+              onPressed: null,
+              icon: const Icon(Icons.link),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(focusNode1.hasPrimaryFocus, isTrue);
+    expect(focusNode2.hasPrimaryFocus, isFalse);
+
+    expect(focusNode1.nextFocus(), isTrue);
+    await tester.pump();
+
+    expect(focusNode1.hasPrimaryFocus, isTrue);
+    expect(focusNode2.hasPrimaryFocus, isFalse);
+  });
+
+  group('feedback', () {
+    FeedbackTester feedback;
+
+    setUp(() {
+      feedback = FeedbackTester();
+    });
+
+    tearDown(() {
+      feedback?.dispose();
+    });
+
+    testWidgets('IconButton with disabled feedback', (WidgetTester tester) async {
+      await tester.pumpWidget(Material(
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: IconButton(
+              onPressed: () {},
+              enableFeedback: false,
+              icon: const Icon(Icons.link),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.byType(IconButton), pointer: 1);
+      await tester.pump(const Duration(seconds: 1));
+      expect(feedback.clickSoundCount, 0);
+      expect(feedback.hapticCount, 0);
+    });
+
+    testWidgets('IconButton with enabled feedback', (WidgetTester tester) async {
+      await tester.pumpWidget(Material(
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: IconButton(
+              onPressed: () {},
+              enableFeedback: true,
+              icon: const Icon(Icons.link),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.byType(IconButton), pointer: 1);
+      await tester.pump(const Duration(seconds: 1));
+      expect(feedback.clickSoundCount, 1);
+      expect(feedback.hapticCount, 0);
+    });
+
+    testWidgets('IconButton with enabled feedback by default', (WidgetTester tester) async {
+      await tester.pumpWidget(Material(
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.link),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.byType(IconButton), pointer: 1);
+      await tester.pump(const Duration(seconds: 1));
+      expect(feedback.clickSoundCount, 1);
+      expect(feedback.hapticCount, 0);
+    });
+  });
 }
 
 Widget wrap({ Widget child }) {
-  return Directionality(
-    textDirection: TextDirection.ltr,
-    child: Material(
-      child: Center(child: child),
+  return DefaultFocusTraversal(
+    policy: ReadingOrderTraversalPolicy(),
+    child: Directionality(
+      textDirection: TextDirection.ltr,
+      child: Material(
+        child: Center(child: child),
+      ),
     ),
   );
 }

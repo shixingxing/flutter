@@ -8,6 +8,47 @@ import 'package:collection/collection.dart';
 
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+
+/// Used in internal testing.
+class FakePlatformViewController extends PlatformViewController {
+
+  FakePlatformViewController(int id) {
+    _id = id;
+  }
+
+  bool disposed = false;
+  bool focusCleared = false;
+
+  /// Events that are dispatched;
+  List<PointerEvent> dispatchedPointerEvents = <PointerEvent>[];
+
+  int _id;
+
+  @override
+  int get viewId => _id;
+
+  @override
+  void dispatchPointerEvent(PointerEvent event) {
+    dispatchedPointerEvents.add(event);
+  }
+
+  void clearTestingVariables() {
+    dispatchedPointerEvents.clear();
+    disposed = false;
+    focusCleared = false;
+  }
+
+  @override
+  void dispose() {
+    disposed = true;
+  }
+
+  @override
+  void clearFocus() {
+    focusCleared = true;
+  }
+}
 
 class FakeAndroidPlatformViewsController {
   FakeAndroidPlatformViewsController() {
@@ -20,14 +61,24 @@ class FakeAndroidPlatformViewsController {
 
   final Map<int, List<FakeAndroidMotionEvent>> motionEvents = <int, List<FakeAndroidMotionEvent>>{};
 
-  final Set<String> _registeredViewTypes = Set<String>();
+  final Set<String> _registeredViewTypes = <String>{};
 
   int _textureCounter = 0;
 
   Completer<void> resizeCompleter;
 
+  Completer<void> createCompleter;
+
+  int lastClearedFocusViewId;
+
   void registerViewType(String viewType) {
     _registeredViewTypes.add(viewType);
+  }
+
+  void invokeViewFocused(int viewId) {
+    final MethodCodec codec = SystemChannels.platform_views.codec;
+    final ByteData data = codec.encodeMethodCall(MethodCall('viewFocused', viewId));
+    ServicesBinding.instance.defaultBinaryMessenger.handlePlatformMessage(SystemChannels.platform_views.name, data, (ByteData data) {});
   }
 
   Future<dynamic> _onMethodCall(MethodCall call) {
@@ -42,11 +93,13 @@ class FakeAndroidPlatformViewsController {
         return _touch(call);
       case 'setDirection':
         return _setDirection(call);
+      case 'clearFocus':
+        return _clearFocus(call);
     }
     return Future<dynamic>.sync(() => null);
   }
 
-  Future<dynamic> _create(MethodCall call) {
+  Future<dynamic> _create(MethodCall call) async {
     final Map<dynamic, dynamic> args = call.arguments;
     final int id = args['id'];
     final String viewType = args['viewType'];
@@ -66,6 +119,10 @@ class FakeAndroidPlatformViewsController {
         code: 'error',
         message: 'Trying to create a platform view of unregistered type: $viewType',
       );
+
+    if (createCompleter != null) {
+      await createCompleter.future;
+    }
 
     _views[id] = FakeAndroidPlatformView(id, viewType, Size(width, height), layoutDirection, creationParams);
     final int textureId = _textureCounter++;
@@ -142,6 +199,19 @@ class FakeAndroidPlatformViewsController {
 
     return Future<dynamic>.sync(() => null);
   }
+
+  Future<dynamic> _clearFocus(MethodCall call) {
+    final int id = call.arguments;
+
+    if (!_views.containsKey(id))
+      throw PlatformException(
+        code: 'error',
+        message: 'Trying to clear the focus on a platform view with unknown id: $id',
+      );
+
+    lastClearedFocusViewId = id;
+    return Future<dynamic>.sync(() => null);
+  }
 }
 
 class FakeIosPlatformViewsController {
@@ -153,14 +223,17 @@ class FakeIosPlatformViewsController {
   Iterable<FakeUiKitView> get views => _views.values;
   final Map<int, FakeUiKitView> _views = <int, FakeUiKitView>{};
 
-  final Set<String> _registeredViewTypes = Set<String>();
+  final Set<String> _registeredViewTypes = <String>{};
 
   // When this completer is non null, the 'create' method channel call will be
   // delayed until it completes.
   Completer<void> creationDelay;
 
-  // Maps a view id to the number of gestures it accepted so fat.
+  // Maps a view id to the number of gestures it accepted so far.
   final Map<int, int> gesturesAccepted = <int, int>{};
+
+  // Maps a view id to the number of gestures it rejected so far.
+  final Map<int, int> gesturesRejected = <int, int>{};
 
   void registerViewType(String viewType) {
     _registeredViewTypes.add(viewType);
@@ -174,6 +247,8 @@ class FakeIosPlatformViewsController {
         return _dispose(call);
       case 'acceptGesture':
         return _acceptGesture(call);
+      case 'rejectGesture':
+        return _rejectGesture(call);
     }
     return Future<dynamic>.sync(() => null);
   }
@@ -202,6 +277,7 @@ class FakeIosPlatformViewsController {
 
     _views[id] = FakeUiKitView(id, viewType, creationParams);
     gesturesAccepted[id] = 0;
+    gesturesRejected[id] = 0;
     return Future<int>.sync(() => null);
   }
 
@@ -209,6 +285,13 @@ class FakeIosPlatformViewsController {
     final Map<dynamic, dynamic> args = call.arguments;
     final int id = args['id'];
     gesturesAccepted[id] += 1;
+    return Future<int>.sync(() => null);
+  }
+
+  Future<dynamic> _rejectGesture(MethodCall call) async {
+    final Map<dynamic, dynamic> args = call.arguments;
+    final int id = args['id'];
+    gesturesRejected[id] += 1;
     return Future<int>.sync(() => null);
   }
 
@@ -221,6 +304,73 @@ class FakeIosPlatformViewsController {
         message: 'Trying to dispose a platform view with unknown id: $id',
       );
     }
+
+    _views.remove(id);
+    return Future<dynamic>.sync(() => null);
+  }
+}
+
+class FakeHtmlPlatformViewsController {
+  FakeHtmlPlatformViewsController() {
+    SystemChannels.platform_views.setMockMethodCallHandler(_onMethodCall);
+  }
+
+  Iterable<FakeHtmlPlatformView> get views => _views.values;
+  final Map<int, FakeHtmlPlatformView> _views = <int, FakeHtmlPlatformView>{};
+
+  final Set<String> _registeredViewTypes = <String>{};
+
+  Completer<void> resizeCompleter;
+
+  Completer<void> createCompleter;
+
+  void registerViewType(String viewType) {
+    _registeredViewTypes.add(viewType);
+  }
+
+  Future<dynamic> _onMethodCall(MethodCall call) {
+    switch(call.method) {
+      case 'create':
+        return _create(call);
+      case 'dispose':
+        return _dispose(call);
+    }
+    return Future<dynamic>.sync(() => null);
+  }
+
+  Future<dynamic> _create(MethodCall call) async {
+    final Map<dynamic, dynamic> args = call.arguments;
+    final int id = args['id'];
+    final String viewType = args['viewType'];
+
+    if (_views.containsKey(id))
+      throw PlatformException(
+        code: 'error',
+        message: 'Trying to create an already created platform view, view id: $id',
+      );
+
+    if (!_registeredViewTypes.contains(viewType))
+      throw PlatformException(
+        code: 'error',
+        message: 'Trying to create a platform view of unregistered type: $viewType',
+      );
+
+    if (createCompleter != null) {
+      await createCompleter.future;
+    }
+
+    _views[id] = FakeHtmlPlatformView(id, viewType);
+    return Future<int>.sync(() => null);
+  }
+
+  Future<dynamic> _dispose(MethodCall call) {
+    final int id = call.arguments;
+
+    if (!_views.containsKey(id))
+      throw PlatformException(
+        code: 'error',
+        message: 'Trying to dispose a platform view with unknown id: $id',
+      );
 
     _views.remove(id);
     return Future<dynamic>.sync(() => null);
@@ -308,5 +458,29 @@ class FakeUiKitView {
   @override
   String toString() {
     return 'FakeUiKitView(id: $id, type: $type, creationParams: $creationParams)';
+  }
+}
+
+class FakeHtmlPlatformView {
+  FakeHtmlPlatformView(this.id, this.type);
+
+  final int id;
+  final String type;
+
+  @override
+  bool operator ==(dynamic other) {
+    if (other.runtimeType != FakeHtmlPlatformView)
+      return false;
+    final FakeHtmlPlatformView typedOther = other;
+    return id == typedOther.id &&
+           type == typedOther.type;
+  }
+
+  @override
+  int get hashCode => hashValues(id, type);
+
+  @override
+  String toString() {
+    return 'FakeHtmlPlatformView(id: $id, type: $type)';
   }
 }

@@ -5,9 +5,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show debugDumpRenderTree, debugDumpLayerTree, debugDumpSemanticsTree, DebugSemanticsDumpOrder;
 import 'package:flutter/scheduler.dart' show timeDilation;
+import 'package:flutter/gestures.dart' show DragStartBehavior;
+
+import 'i18n/stock_strings.dart';
 import 'stock_data.dart';
 import 'stock_list.dart';
-import 'stock_strings.dart';
 import 'stock_symbol_viewer.dart';
 import 'stock_types.dart';
 
@@ -110,6 +112,7 @@ class StockHomeState extends State<StockHome> {
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
       child: ListView(
+        dragStartBehavior: DragStartBehavior.down,
         children: <Widget>[
           const DrawerHeader(child: Center(child: Text('Stocks'))),
           const ListTile(
@@ -188,7 +191,7 @@ class StockHomeState extends State<StockHome> {
   Widget buildAppBar() {
     return AppBar(
       elevation: 0.0,
-      title: Text(StockStrings.of(context).title()),
+      title: Text(StockStrings.of(context).title),
       actions: <Widget>[
         IconButton(
           icon: const Icon(Icons.search),
@@ -220,8 +223,8 @@ class StockHomeState extends State<StockHome> {
       ],
       bottom: TabBar(
         tabs: <Widget>[
-          Tab(text: StockStrings.of(context).market()),
-          Tab(text: StockStrings.of(context).portfolio()),
+          Tab(text: StockStrings.of(context).market),
+          Tab(text: StockStrings.of(context).portfolio),
         ],
       ),
     );
@@ -260,7 +263,7 @@ class StockHomeState extends State<StockHome> {
       stocks: stocks.toList(),
       onAction: _buyStock,
       onOpen: (Stock stock) {
-        Navigator.pushNamed(context, '/stock:${stock.symbol}');
+        Navigator.pushNamed(context, '/stock', arguments: stock.symbol);
       },
       onShow: (Stock stock) {
         _scaffoldKey.currentState.showBottomSheet<void>((BuildContext context) => StockSymbolBottomSheet(stock: stock));
@@ -317,11 +320,13 @@ class StockHomeState extends State<StockHome> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        drawerDragStartBehavior: DragStartBehavior.down,
         key: _scaffoldKey,
         appBar: _isSearching ? buildSearchBar() : buildAppBar(),
         floatingActionButton: buildFloatingActionButton(),
         drawer: _buildDrawer(context),
         body: TabBarView(
+          dragStartBehavior: DragStartBehavior.down,
           children: <Widget>[
             _buildStockTab(context, StockHomeTab.market, widget.stocks.allSymbols),
             _buildStockTab(context, StockHomeTab.portfolio, portfolioSymbols),
